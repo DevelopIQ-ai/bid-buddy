@@ -1,5 +1,9 @@
 import os
+from dotenv import load_dotenv
 import resend
+
+# Load environment variables from .env
+load_dotenv('.env')
 
 # Set your Resend API key
 resend.api_key = os.environ.get("RESEND_API_KEY")
@@ -11,8 +15,9 @@ def send_test_email():
     Make sure to set your RESEND_API_KEY environment variable.
     """
     # Hardcoded values - update these with your actual email addresses
-    from_email = "onboarding@resend.dev"  # Replace with your verified domain
-    to_email = "delivered@resend.dev"      # Replace with recipient email
+    from_email = "kush@developiq.ai"
+
+    to_email = "bidbuddy@agentmail.to"
 
     params: resend.Emails.SendParams = {
         "from": from_email,

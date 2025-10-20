@@ -14,6 +14,11 @@ class MessageData(BaseModel):
     message_id: str
     inbox_id: str
     thread_id: str
+    from_: Optional[str] = None
+    to: Optional[list] = None
+    subject: Optional[str] = None
+    text: Optional[str] = None
+    html: Optional[str] = None
 
 class WebhookPayload(BaseModel):
     event_type: str
@@ -28,14 +33,9 @@ async def handle_agentmail_webhook(request: Request):
         webhook_payload = WebhookPayload(**event_data)
 
         if webhook_payload.event_type == "message.received":
-            # Initialize AgentMail client
-            client = AgentMail(api_key=os.getenv("AGENTMAIL_API_KEY"))
-
-            # Fetch the full email message
-            message = client.inboxes.messages.get(
-                inbox_id=webhook_payload.message.inbox_id,
-                message_id=webhook_payload.message.message_id
-            )
+            # Use the message data from the webhook payload directly
+            # No need to fetch it again since body_included is true
+            message = webhook_payload.message
 
             # Print the email
             print("\n" + "="*80)
