@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 async def get_projects(user: Dict = Depends(get_current_user)):
     """Get all projects for the current user"""
     try:
-        supabase = get_supabase_client()
+        supabase = get_supabase_client(user.get('access_token'))
 
         response = supabase.table('projects').select(
             'id, user_id, name, enabled, drive_folder_id, drive_folder_name, is_drive_folder, last_modified_time, created_at, updated_at'
@@ -35,7 +35,7 @@ async def toggle_project(
 ):
     """Toggle project enabled/disabled status"""
     try:
-        supabase = get_supabase_client()
+        supabase = get_supabase_client(user.get('access_token'))
 
         response = supabase.table('projects').update({
             'enabled': toggle_data.enabled

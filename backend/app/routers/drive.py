@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 async def get_root_folder(user: Dict = Depends(get_current_user)):
     """Get user's configured root folder"""
     try:
-        supabase = get_supabase_client()
+        supabase = get_supabase_client(user.get('access_token'))
 
         response = supabase.table('profiles').select(
             'drive_root_folder_id, drive_root_folder_name, last_sync_at'
@@ -53,7 +53,7 @@ async def set_root_folder(
         if not folder_id or not folder_name:
             raise HTTPException(status_code=400, detail="Folder ID and name are required")
 
-        supabase = get_supabase_client()
+        supabase = get_supabase_client(user.get('access_token'))
 
         # Check if profile exists
         response = supabase.table('profiles').select('id').eq('id', user['id']).execute()
@@ -87,7 +87,7 @@ async def sync_drive_folders(
     """Sync Google Drive folders as projects"""
     try:
         # Get user's root folder configuration
-        supabase = get_supabase_client()
+        supabase = get_supabase_client(user.get('access_token'))
 
         response = supabase.table('profiles').select(
             'drive_root_folder_id, drive_root_folder_name'
@@ -239,16 +239,7 @@ async def list_folders(
 ):
     """List real Google Drive folders"""
     try:
-        # Get Google access token from request header
-        auth_header = request.headers.get("authorization")
-        if not auth_header:
-            raise HTTPException(status_code=401, detail="No authorization header")
-
-        # Extract the Supabase access token
-        supabase_token = auth_header.split(" ")[1]
-
         # Get the provider token (Google access token) from Supabase session
-        # For now, we'll need the frontend to pass the Google token
         google_token_header = request.headers.get("x-google-token")
 
         if not google_token_header:
