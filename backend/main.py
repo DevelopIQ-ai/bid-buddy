@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 from dotenv import load_dotenv
 
-from app.routers import projects, drive
+from app.routers import projects, drive, agentmail_webhook
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +27,7 @@ app.add_middleware(
 # Include routers
 app.include_router(projects.router)
 app.include_router(drive.router)
+app.include_router(agentmail_webhook.router, prefix="/webhooks", tags=["webhooks"])
 
 
 @app.get("/")
