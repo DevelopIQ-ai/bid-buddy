@@ -144,11 +144,13 @@ export default function Dashboard() {
             <h1 className="text-xl font-semibold text-black">Bid Buddy</h1>
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <img
-                  src={user.user_metadata?.avatar_url || ''}
-                  alt="Profile"
-                  className="w-8 h-8 rounded-full"
-                />
+                {user.user_metadata?.avatar_url && (
+                  <img
+                    src={user.user_metadata.avatar_url}
+                    alt="Profile"
+                    className="w-8 h-8 rounded-full"
+                  />
+                )}
                 <span className="text-sm font-medium text-black">{user.user_metadata?.full_name || user.email}</span>
               </div>
               <button
@@ -173,11 +175,13 @@ export default function Dashboard() {
             <div className="px-6 py-4 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <img
-                    src={user.user_metadata?.avatar_url || ''}
-                    alt="Profile"
-                    className="w-10 h-10 rounded-full"
-                  />
+                  {user.user_metadata?.avatar_url && (
+                    <img
+                      src={user.user_metadata.avatar_url}
+                      alt="Profile"
+                      className="w-10 h-10 rounded-full"
+                    />
+                  )}
                   <div>
                     <p className="text-sm font-medium text-gray-900">{user.user_metadata?.full_name || 'User'}</p>
                     <p className="text-sm text-gray-500">{user.email}</p>

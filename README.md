@@ -13,20 +13,18 @@ A dashboard application for managing projects with Google Drive integration and 
 
 ```
 bid-buddy/
-├── app/                    # Next.js frontend
-├── backend/               # FastAPI backend
-│   ├── app/
-│   │   ├── routers/      # API endpoints
-│   │   ├── models/       # Pydantic models
-│   │   ├── services/     # Business logic
-│   │   ├── middleware/   # Authentication middleware
-│   │   └── database/     # Database clients
-│   ├── requirements.txt
-│   ├── main.py
-│   └── Dockerfile
-├── components/           # React components
-├── lib/                 # Utilities and API clients
-└── supabase/           # Database migrations
+├── frontend/              # Next.js frontend application
+│   ├── app/              # Next.js app directory
+│   ├── components/       # React components
+│   ├── lib/             # Utilities and API clients
+│   ├── public/          # Static assets
+│   ├── supabase/        # Database migrations
+│   ├── package.json
+│   └── tsconfig.json
+└── backend/              # FastAPI backend
+    ├── main.py          # FastAPI server
+    ├── requirements.txt
+    └── GOOGLE_DRIVE_INTEGRATION.md
 ```
 
 ## Features
@@ -46,16 +44,16 @@ Run the migrations in your Supabase dashboard:
 
 ```sql
 -- Copy and run each migration file in order:
--- supabase/migrations/001_initial_schema.sql
--- supabase/migrations/002_fix_user_creation.sql  
--- supabase/migrations/003_drive_integration.sql
+-- frontend/supabase/migrations/001_initial_schema.sql
+-- frontend/supabase/migrations/002_fix_user_creation.sql
+-- frontend/supabase/migrations/003_drive_integration.sql
 ```
 
 ### 2. Environment Configuration
 
 Update the environment files with your credentials:
 
-**Frontend (.env.local):**
+**Frontend (frontend/.env.local):**
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
@@ -69,7 +67,6 @@ SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-JWT_SECRET=your-jwt-secret
 ```
 
 ### 3. Google OAuth Setup
@@ -92,6 +89,7 @@ uvicorn main:app --reload --port 8000
 
 **Frontend (Terminal 2):**
 ```bash
+cd frontend
 npm install
 npm run dev
 # Frontend runs on http://localhost:3000
