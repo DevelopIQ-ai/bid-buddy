@@ -16,3 +16,6 @@ pydantic-settings>=2.5.2
 asyncpg>=0.28.0
 supabase>=2.22.0
 requests>=2.31.0
+dedalus-labs
+agentmail
+resend

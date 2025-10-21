@@ -15,7 +15,7 @@ def send_test_email():
     Make sure to set your RESEND_API_KEY environment variable.
     """
     # Hardcoded values - update these with your actual email addresses
-    from_email = "kush@developiq.ai"
+    from_email = "bids@atlas.developiq.bid"
 
     to_email = "bidbuddy@agentmail.to"
 
