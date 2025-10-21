@@ -249,7 +249,6 @@ def extract_from_file(file_data: bytes, filename: str, timeout: int = 300, activ
     
     raise TimeoutError(f"Extraction timed out after {timeout} seconds")
 
-
 def save_extraction_to_db(file_data: bytes, filename: str, attachment_url: str, active_projects: list[str] = [], table_name: str = "document_extractions", access_token: Optional[str] = None) -> Dict[str, Any]:
     """
     Extract document from raw file and save results to database.

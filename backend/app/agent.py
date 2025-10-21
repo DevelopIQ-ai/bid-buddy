@@ -1,9 +1,11 @@
 import asyncio
 import json
 import os
-from typing import Dict, Any, Callable, Optional
+from typing import Dict, Any, Optional
 from dedalus_labs import AsyncDedalus, DedalusRunner
 from dotenv import load_dotenv
+from agentmail import AgentMail
+from app.utils.reducto import extract_from_file
 
 load_dotenv()
 
@@ -60,108 +62,140 @@ async def llm_json_with_retry(
     raise ValueError("Unexpected error in JSON retry mechanism")
 
 
-async def classify_email(message_data: Dict[str, Any]) -> Dict[str, Any]:
+async def node_1_email_analysis(message_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Classify an email to determine:
-    1. If there's a PDF/DOCX document attached
-    2. If it's a question about a project
-    3. If it's something else
+    Check if email is relevant, and if so, is it requesting clarification about the project, and is it a bid proposal.
+
+    Args:
+        message_data: Email message data from AgentMail
+
+    Returns:
+        Dict with:
+        - relevant: bool
+        - needs_clarification: bool
+        - bid_proposal_included: bool
     """
-    # Extract email data
     from_ = message_data.get('from_', '')
     subject = message_data.get('subject', '')
     text = message_data.get('text', '')
-    attachments = message_data.get('attachments', [])
+    attachments = message_data.get('attachments') or []
 
-    # Check for valid attachments (PDF/DOCX only)
-    attachment_info = ""
-    valid_attachments = []
+    has_attachment = False
     if attachments:
-        valid_attachments = [att for att in attachments if att.get('filename', '').lower().endswith(('.pdf', '.docx'))]
-        if valid_attachments:
-            attachment_info = "\nAttachments (PDF/DOCX only): " + ", ".join([att.get('filename', 'unknown') for att in valid_attachments])
-        else:
-            attachment_info = "\nAttachments: None (no PDF/DOCX files)"
+        for att in attachments:
+            filename = att.get('filename', '')
+            if filename.lower().endswith(('.pdf', '.docx')):
+                has_attachment = True
+                break
 
-    # Build prompt
-    prompt = f"""Analyze this email and respond ONLY with valid JSON:
+    prompt = f"""You are a general contractor's assistant, in charge of sorting through emails from subcontractors who are bidding on a project. Some of the emails will be asking questions about the project, and some will be bid proposals. Some will also be spam, ads, or other irrelevant emails.
 
-Email:
-- From: {from_}
-- Subject: {subject}
-- Content: {text[:500] if text else 'No content'}
-{attachment_info}
+    IMPORTANT RULES:
+    1. A bid proposal can ONLY be included if there is a PDF or DOCX attachment
+    2. If there is NO attachment, bid_proposal_included MUST be false, even if the email mentions a proposal
+    3. If the email has a PDF or DOCX attachment, it is probably a bid proposal, unless the text suggests otherwise
+    4. An email can both have a bid proposal AND be asking questions about the project
+    5. If you're not sure if relevant, assume it IS relevant (better safe than sorry)
 
-Classify the email into ONE of these types:
-- "has_document": Email contains a PDF or DOCX attachment (proposal, bid, etc.)
-- "is_question": Email is asking questions about a project that needs clarification
-- "other": Anything else (general message, test email, etc.)
+    Email:
+    - From: {from_}
+    - Subject: {subject}
+    - Content: {text[:1000] if text else 'No content'}
+    - Has PDF/DOCX attachment: {has_attachment}
 
-Respond with this exact JSON format:
-{{
-    "email_type": "has_document" or "is_question" or "other",
-    "confidence": 0.95
-}}
+    Determine if this email is relevant, and if so, is it requesting clarification about the project, and is it a bid proposal.
 
-Note: confidence should be a number between 0 and 1 (e.g., 0.85, 0.95, 0.6)"""
+    Respond with ONLY this JSON format:
+    {{
+        "relevant": true or false,
+        "needs_clarification": true or false,
+        "bid_proposal_included": {"true (ONLY if has_attachment is True)" if has_attachment else "false (MUST be false - no attachment)"}
+    }}"""
 
     try:
-        # Use retry mechanism to get JSON response
-        classification = await llm_json_with_retry(prompt)
+        result = await llm_json_with_retry(prompt)
 
-        # Add metadata
-        classification["from"] = from_
-        classification["subject"] = subject
+        if not has_attachment:
+            result["bid_proposal_included"] = False
 
-        # If email has a document, download it from AgentMail
-        if classification.get("email_type") == "has_document" and valid_attachments:
-            classification["document"] = await download_document(message_data, valid_attachments[0])
-
-        return classification
-
+        return result
     except Exception as e:
-        # Fallback if all retries failed
         return {
-            "email_type": "other",
-            "confidence": 0.0,
-            "from": from_,
-            "subject": subject,
-            "error": f"Classification failed: {str(e)}"
+            "relevant": False,
+            "needs_clarification": False,
+            "bid_proposal_included": False,
+            "error": f"Error analyzing email: {str(e)}"
         }
 
 
-async def download_document(message_data: Dict[str, Any], attachment: Dict[str, Any]) -> Dict[str, Any]:
+async def node_2b_forward_email_to_subcontractor(message_data: Dict[str, Any]) -> Dict[str, Any]:
+
+    return {
+        "status": "forwarded",
+        "message_id": message_data.get('message_id')
+    }
+
+async def node_2a_analyze_attachment(message_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Download a document attachment from AgentMail.
+    Download all PDF/DOCX attachments and analyze them with Reducto.
+
+    Args:
+        message_data: Email message data from AgentMail
 
     Returns:
-        Dict with document info: filename, size, content_type, download_url or content
+        Dict with list of proposal analyses from Reducto
     """
-    try:
-        from agentmail import AgentMail
 
-        client = AgentMail(api_key=os.getenv("AGENTMAIL_API_KEY"))
-        inbox_id = message_data.get('inbox_id')
-        message_id = message_data.get('message_id')
+    attachments = message_data.get('attachments') or []
+    inbox_id = message_data.get('inbox_id')
+    message_id = message_data.get('message_id')
 
-        # Get the full message with attachments
-        message = client.inboxes.messages.get(
-            inbox_id=inbox_id,
-            message_id=message_id
-        )
+    # Find all PDF/DOCX attachments
+    valid_attachments = []
+    for att in attachments:
+        filename = att.get('filename', '')
+        if filename.lower().endswith(('.pdf', '.docx')):
+            valid_attachments.append(att)
 
-        # Find the attachment and download it
-        filename = attachment.get('filename', 'document')
+    client = AgentMail(api_key=os.getenv("AGENTMAIL_API_KEY"))
+    proposals = []
 
-        return {
-            "filename": filename,
-            "content_type": attachment.get('content_type', 'application/octet-stream'),
-            "size": attachment.get('size', 0),
-            "status": "downloaded"
-        }
-    except Exception as e:
-        return {
-            "filename": attachment.get('filename', 'unknown'),
-            "status": "error",
-            "error": str(e)
-        }
+    # Process each attachment
+    for attachment in valid_attachments:
+        try:
+            attachment_id = attachment.get('attachment_id')
+
+            # Get attachment bytes (iterator)
+            attachment_bytes_iter = client.inboxes.messages.get_attachment(
+                inbox_id=inbox_id,
+                message_id=message_id,
+                attachment_id=attachment_id
+            )
+
+            # Collect bytes from iterator
+            file_data = b''.join(attachment_bytes_iter)
+
+            # Process with Reducto
+            filename = attachment.get('filename', 'document.pdf')
+            result = extract_from_file(file_data, filename, active_projects=[])
+
+            proposals.append({
+                "filename": filename,
+                "is_bid_proposal": result.get("is_bid_proposal", False),
+                "company_name": result.get("company_name"),
+                "trade": result.get("trade"),
+                "project_name": result.get("project_name"),
+                "status": "analyzed"
+            })
+
+        except Exception as e:
+            proposals.append({
+                "error": str(e),
+                "filename": attachment.get('filename', 'unknown'),
+                "status": "error"
+            })
+
+    return {
+        "proposals": proposals,
+        "total_count": len(proposals)
+    }
