@@ -1,0 +1,160 @@
+{
+  "summary": {
+    "total_tests": 10,
+    "original_passed": 2,
+    "llm_passed": 8,
+    "average_score": 0.88,
+    "pass_rate": 80.0,
+    "grade": "B"
+  },
+  "evaluations": [
+    {
+      "test_number": 11,
+      "subject": "Fwd: Estimate 2023-095 from Mustang Electrical Services, LLC",
+      "original_pass": false,
+      "llm_pass": true,
+      "llm_score": 0.95,
+      "reasoning": "The actual output correctly identifies the relevant company and provides a more detailed project name, which is better than the expected output. The forward_result type mismatch is ignored, and the overall information accuracy is high.",
+      "category_scores": {
+        "classification": 1.0,
+        "extraction": 0.9
+      }
+    },
+    {
+      "test_number": 12,
+      "subject": "Fwd: O'Reilly- Prototype Budget Bid (CONCRETE PROPOSAL ATTACHED)",
+      "original_pass": false,
+      "llm_pass": true,
+      "llm_score": 0.95,
+      "reasoning": "The actual output is acceptable as it meets the criteria for classification and extraction. The classification is consistent, and the extraction identifies the correct project name. The company name is considered acceptable despite the formatting difference. The type mismatch for 'forward_result' is ignored as per the rules.",
+      "category_scores": {
+        "classification": 1.0,
+        "extraction": 0.9
+      }
+    },
+    {
+      "test_number": 13,
+      "subject": "Fwd: Panda Bulverde",
+      "original_pass": false,
+      "llm_pass": true,
+      "llm_score": 0.95,
+      "reasoning": "The classification is consistent, and the extraction identifies the correct company and project, despite minor discrepancies in naming and trade. The actual output provides more detail in the project name, which is a positive aspect.",
+      "category_scores": {
+        "classification": 1.0,
+        "extraction": 0.9
+      }
+    },
+    {
+      "test_number": 14,
+      "subject": "Fwd: Panda Express Bulverde Rd",
+      "original_pass": false,
+      "llm_pass": false,
+      "llm_score": 0.4,
+      "reasoning": "The actual output fails to include the bid proposal and attachment analysis, which are critical for a valid bid processing result. While the classification of relevance and needs clarification is correct, the absence of key information significantly lowers the score.",
+      "category_scores": {
+        "classification": 0.8,
+        "extraction": 0.0
+      }
+    },
+    {
+      "test_number": 15,
+      "subject": "Fwd: Panda Express Bulverde TX. HVAC Bid",
+      "original_pass": false,
+      "llm_pass": true,
+      "llm_score": 0.95,
+      "reasoning": "The actual output correctly identifies the relevant company and trade, and provides a more detailed project name with the full address, which is better than the expected output. The type mismatch for 'forward_result' is ignored as per the evaluation criteria, and the project name still indicates the same project despite the difference in wording.",
+      "category_scores": {
+        "classification": 1.0,
+        "extraction": 0.9
+      }
+    },
+    {
+      "test_number": 16,
+      "subject": "Fwd: Panda Express Bulverde Rd San Antonio - SWPPP Proposal",
+      "original_pass": false,
+      "llm_pass": true,
+      "llm_score": 0.95,
+      "reasoning": "The actual output correctly identifies the relevant information, including the company and project, despite minor discrepancies in trade and project name formatting. The extraction is detailed and accurate, meeting the evaluation criteria.",
+      "category_scores": {
+        "classification": 1.0,
+        "extraction": 0.9
+      }
+    },
+    {
+      "test_number": 17,
+      "original_pass": true,
+      "llm_pass": true,
+      "llm_score": 1.0,
+      "reasoning": "Test already passed strict comparison"
+    },
+    {
+      "test_number": 18,
+      "original_pass": true,
+      "llm_pass": true,
+      "llm_score": 1.0,
+      "reasoning": "Test already passed strict comparison"
+    },
+    {
+      "test_number": 19,
+      "subject": "Fwd: Panda express Bulverde",
+      "original_pass": false,
+      "llm_pass": true,
+      "llm_score": 0.95,
+      "reasoning": "The actual output correctly identifies the relevance and includes a bid proposal. The company name and project name are acceptable despite minor differences in wording. The trade is related, and the overall extraction is accurate. The forward_result type mismatch is ignored as per the evaluation criteria.",
+      "category_scores": {
+        "classification": 1.0,
+        "extraction": 0.9
+      }
+    },
+    {
+      "test_number": 20,
+      "subject": "Traffic/Safety Barriers - PX- San Antonio (Bulverde)",
+      "original_pass": false,
+      "llm_pass": false,
+      "llm_score": 0.7,
+      "reasoning": "The actual output has a significant issue with the relevance classification, which is marked as true instead of false. However, the other classifications are consistent, and the type mismatch for forward_result does not affect the score. Overall, the classification score is low due to the relevance issue, but extraction is acceptable.",
+      "category_scores": {
+        "classification": 0.4,
+        "extraction": 1.0
+      }
+    }
+  ],
+  "improvements": [
+    {
+      "test_number": 11,
+      "subject": "Fwd: Estimate 2023-095 from Mustang Electrical Services, LLC",
+      "score": 0.95,
+      "reasoning": "The actual output correctly identifies the relevant company and provides a more detailed project name, which is better than the expected output. The forward_result type mismatch is ignored, and the overall information accuracy is high."
+    },
+    {
+      "test_number": 12,
+      "subject": "Fwd: O'Reilly- Prototype Budget Bid (CONCRETE PROPOSAL ATTACHED)",
+      "score": 0.95,
+      "reasoning": "The actual output is acceptable as it meets the criteria for classification and extraction. The classification is consistent, and the extraction identifies the correct project name. The company name is considered acceptable despite the formatting difference. The type mismatch for 'forward_result' is ignored as per the rules."
+    },
+    {
+      "test_number": 13,
+      "subject": "Fwd: Panda Bulverde",
+      "score": 0.95,
+      "reasoning": "The classification is consistent, and the extraction identifies the correct company and project, despite minor discrepancies in naming and trade. The actual output provides more detail in the project name, which is a positive aspect."
+    },
+    {
+      "test_number": 15,
+      "subject": "Fwd: Panda Express Bulverde TX. HVAC Bid",
+      "score": 0.95,
+      "reasoning": "The actual output correctly identifies the relevant company and trade, and provides a more detailed project name with the full address, which is better than the expected output. The type mismatch for 'forward_result' is ignored as per the evaluation criteria, and the project name still indicates the same project despite the difference in wording."
+    },
+    {
+      "test_number": 16,
+      "subject": "Fwd: Panda Express Bulverde Rd San Antonio - SWPPP Proposal",
+      "score": 0.95,
+      "reasoning": "The actual output correctly identifies the relevant information, including the company and project, despite minor discrepancies in trade and project name formatting. The extraction is detailed and accurate, meeting the evaluation criteria."
+    },
+    {
+      "test_number": 19,
+      "subject": "Fwd: Panda express Bulverde",
+      "score": 0.95,
+      "reasoning": "The actual output correctly identifies the relevance and includes a bid proposal. The company name and project name are acceptable despite minor differences in wording. The trade is related, and the overall extraction is accurate. The forward_result type mismatch is ignored as per the evaluation criteria."
+    }
+  ]
+}

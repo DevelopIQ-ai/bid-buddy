@@ -1,0 +1,1841 @@
+{
+  "summary": {
+    "total": 30,
+    "passed": 0,
+    "failed": 30,
+    "pass_rate": 0.0,
+    "grade": "F"
+  },
+  "results": [
+    {
+      "test_index": 0,
+      "subject": "Level Up with Reducto \u2014 Extract Data & Build Pipelines ",
+      "from": "Adel @ Reducto <adel@hey.reducto.ai>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant"
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis",
+          "error": "Missing key in actual output",
+          "expected": {
+            "relevant": false,
+            "needs_clarification": false,
+            "bid_proposal_included": false,
+            "forward_result": false,
+            "attachment_analysis": null
+          }
+        }
+      ]
+    },
+    {
+      "test_index": 1,
+      "subject": "Re: Welcome to Reducto!",
+      "from": "Donald Wu <donald@reducto.ai>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant"
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis",
+          "error": "Missing key in actual output",
+          "expected": {
+            "relevant": false,
+            "needs_clarification": false,
+            "bid_proposal_included": false,
+            "forward_result": false,
+            "attachment_analysis": null
+          }
+        }
+      ]
+    },
+    {
+      "test_index": 2,
+      "subject": "Re: Yogurtland - Flower Mound, TX - Breakdown Cost of Interior Framing & Drywall",
+      "from": "Carlos Sixtos <carlos.s@texasstar-dp.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "error": "Invalid request: {'detail': 'Invalid schema'}",
+                "filename": "Texas Star D&P - #500R.2 - Yogurtland - Flower Mound, Tx - Paint proposal.pdf",
+                "status": "error"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Texas Star D&P - #500R.2 - Yogurtland - Flower Mound, Tx - Paint proposal.pdf",
+                "is_bid_proposal": true,
+                "company_name": "Texas Star Drywall & Painting",
+                "trade": "Drywall & Painting",
+                "project_name": "Yogurtland- Flower Mound",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].is_bid_proposal",
+          "error": "Missing key in actual output",
+          "expected": true
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].company_name",
+          "error": "Missing key in actual output",
+          "expected": "Texas Star Drywall & Painting"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].trade",
+          "error": "Missing key in actual output",
+          "expected": "Drywall & Painting"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "error": "Missing key in actual output",
+          "expected": "Yogurtland- Flower Mound"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].status",
+          "expected": "analyzed",
+          "actual": "error"
+        }
+      ]
+    },
+    {
+      "test_index": 3,
+      "subject": "Proposal Submitted - CCH Church Project, Dallas",
+      "from": "Jean Becerra (F&J Glass & Mirror LLC) <team@buildingconnected.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": false
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Bid-0001695.pdf",
+                "is_bid_proposal": true,
+                "company_name": "F&J Glass & Mirror LLC",
+                "trade": "Glass & Mirror",
+                "project_name": "CCH Church Project- Dallas",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis.bid_proposal_included",
+          "expected": true,
+          "actual": false
+        },
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        },
+        {
+          "path": "analysis.attachment_analysis",
+          "error": "Missing key in actual output",
+          "expected": {
+            "proposals": [
+              {
+                "filename": "Bid-0001695.pdf",
+                "is_bid_proposal": true,
+                "company_name": "F&J Glass & Mirror LLC",
+                "trade": "Glass & Mirror",
+                "project_name": "CCH Church Project- Dallas",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      ]
+    },
+    {
+      "test_index": 4,
+      "subject": "Proposal Submitted - PX- San Antonio (Bulverde)",
+      "from": "Jean Becerra (F&J Glass & Mirror LLC) <team@buildingconnected.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": false
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Bid-0001692.pdf",
+                "is_bid_proposal": true,
+                "company_name": "F&J Glass & Mirror LLC",
+                "trade": "Glass & Mirror",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis.bid_proposal_included",
+          "expected": true,
+          "actual": false
+        },
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        },
+        {
+          "path": "analysis.attachment_analysis",
+          "error": "Missing key in actual output",
+          "expected": {
+            "proposals": [
+              {
+                "filename": "Bid-0001692.pdf",
+                "is_bid_proposal": true,
+                "company_name": "F&J Glass & Mirror LLC",
+                "trade": "Glass & Mirror",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      ]
+    },
+    {
+      "test_index": 5,
+      "subject": "Faster workflows with Shared Takeoffs",
+      "from": "PlanHub <connect@planhub.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": false
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "differences": [
+        {
+          "path": "action",
+          "error": "Missing key in actual output",
+          "expected": "skipped"
+        },
+        {
+          "path": "reason",
+          "error": "Missing key in actual output",
+          "expected": "irrelevant"
+        },
+        {
+          "path": "analysis.relevant",
+          "expected": false,
+          "actual": true
+        },
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        }
+      ]
+    },
+    {
+      "test_index": 6,
+      "subject": "Re: Christ Church Bid Roofing",
+      "from": "Daniel Lopez <dan@fbccommercialroofing.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": false
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": true,
+          "bid_proposal_included": false,
+          "forward_result": true,
+          "attachment_analysis": null
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis.relevant",
+          "expected": false,
+          "actual": true
+        },
+        {
+          "path": "analysis.needs_clarification",
+          "expected": true,
+          "actual": false
+        },
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "test_index": 7,
+      "subject": "Welcome to Reducto \u2014 Start Parsing in Minutes",
+      "from": "Adel @ Reducto <adel@hey.reducto.ai>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": false
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "differences": [
+        {
+          "path": "action",
+          "error": "Missing key in actual output",
+          "expected": "skipped"
+        },
+        {
+          "path": "reason",
+          "error": "Missing key in actual output",
+          "expected": "irrelevant"
+        },
+        {
+          "path": "analysis.relevant",
+          "expected": false,
+          "actual": true
+        },
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        }
+      ]
+    },
+    {
+      "test_index": 8,
+      "subject": "Welcome to Reducto!",
+      "from": "Reducto <adit@hey.reducto.ai>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": false
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "differences": [
+        {
+          "path": "action",
+          "error": "Missing key in actual output",
+          "expected": "skipped"
+        },
+        {
+          "path": "reason",
+          "error": "Missing key in actual output",
+          "expected": "irrelevant"
+        },
+        {
+          "path": "analysis.relevant",
+          "expected": false,
+          "actual": true
+        },
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        }
+      ]
+    },
+    {
+      "test_index": 9,
+      "subject": "Planning/Design Project Report",
+      "from": "PlanHub <planhubnotifications@planhub.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": false
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "differences": [
+        {
+          "path": "action",
+          "error": "Missing key in actual output",
+          "expected": "skipped"
+        },
+        {
+          "path": "reason",
+          "error": "Missing key in actual output",
+          "expected": "irrelevant"
+        },
+        {
+          "path": "analysis.relevant",
+          "expected": false,
+          "actual": true
+        },
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        }
+      ]
+    },
+    {
+      "test_index": 10,
+      "subject": "Fwd: Estimate 2023-095 from Mustang Electrical Services, LLC",
+      "from": "Estimating Team <estimator@vanbruntco.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "error": "Invalid request: {'detail': 'Invalid schema'}",
+                "filename": "Estimate_2023095_from_Mustang_Electrical_Services.pdf",
+                "status": "error"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Estimate_2023095_from_Mustang_Electrical_Services.pdf",
+                "is_bid_proposal": true,
+                "company_name": "Mustang Electrical Services",
+                "trade": "Electrical",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].is_bid_proposal",
+          "error": "Missing key in actual output",
+          "expected": true
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].company_name",
+          "error": "Missing key in actual output",
+          "expected": "Mustang Electrical Services"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].trade",
+          "error": "Missing key in actual output",
+          "expected": "Electrical"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "error": "Missing key in actual output",
+          "expected": "PX-San Antonio (Bulverde)"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].status",
+          "expected": "analyzed",
+          "actual": "error"
+        }
+      ]
+    },
+    {
+      "test_index": 11,
+      "subject": "Fwd: O'Reilly- Prototype Budget Bid (CONCRETE PROPOSAL ATTACHED)",
+      "from": "Estimating Team <estimator@vanbruntco.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "error": "Invalid request: {'detail': 'Invalid schema'}",
+                "filename": "OReilly- Prototype Budget Bid.docx (1).pdf",
+                "status": "error"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "OReilly- Prototype Budget Bid.docx (1).pdf",
+                "is_bid_proposal": true,
+                "company_name": "Divine Concrete",
+                "trade": "Concrete",
+                "project_name": "O'Reilly- Prototype Budget Bid",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].is_bid_proposal",
+          "error": "Missing key in actual output",
+          "expected": true
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].company_name",
+          "error": "Missing key in actual output",
+          "expected": "Divine Concrete"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].trade",
+          "error": "Missing key in actual output",
+          "expected": "Concrete"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "error": "Missing key in actual output",
+          "expected": "O'Reilly- Prototype Budget Bid"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].status",
+          "expected": "analyzed",
+          "actual": "error"
+        }
+      ]
+    },
+    {
+      "test_index": 12,
+      "subject": "Fwd: Panda Bulverde",
+      "from": "Estimating Team <estimator@vanbruntco.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "error": "Invalid request: {'detail': 'Invalid schema'}",
+                "filename": "Utilitie & Plumbing Proposal_Panda Bulverde_101425.pdf",
+                "status": "error"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Utilitie & Plumbing Proposal_Panda Bulverde_101425.pdf",
+                "is_bid_proposal": true,
+                "company_name": "Grisham Plumbing LLC",
+                "trade": "Utilities & Plumbing",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].is_bid_proposal",
+          "error": "Missing key in actual output",
+          "expected": true
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].company_name",
+          "error": "Missing key in actual output",
+          "expected": "Grisham Plumbing LLC"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].trade",
+          "error": "Missing key in actual output",
+          "expected": "Utilities & Plumbing"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "error": "Missing key in actual output",
+          "expected": "PX-San Antonio (Bulverde)"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].status",
+          "expected": "analyzed",
+          "actual": "error"
+        }
+      ]
+    },
+    {
+      "test_index": 13,
+      "subject": "Fwd: Panda Express Bulverde Rd",
+      "from": "Estimating Team <estimator@vanbruntco.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": false
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "PANDA EXPRESS BULVERDE - VAN BRUNT & CO.xlsx",
+                "is_bid_proposal": true,
+                "company_name": "Design Drywall, Inc",
+                "trade": "Drywall",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis.bid_proposal_included",
+          "expected": true,
+          "actual": false
+        },
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        },
+        {
+          "path": "analysis.attachment_analysis",
+          "error": "Missing key in actual output",
+          "expected": {
+            "proposals": [
+              {
+                "filename": "PANDA EXPRESS BULVERDE - VAN BRUNT & CO.xlsx",
+                "is_bid_proposal": true,
+                "company_name": "Design Drywall, Inc",
+                "trade": "Drywall",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      ]
+    },
+    {
+      "test_index": 14,
+      "subject": "Fwd: Panda Express Bulverde TX. HVAC Bid",
+      "from": "Estimating Team <estimator@vanbruntco.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "error": "Invalid request: {'detail': 'Invalid schema'}",
+                "filename": "Panda Express Bulverde TX.pdf",
+                "status": "error"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Panda Express Bulverde TX.pdf",
+                "is_bid_proposal": true,
+                "company_name": "Masters Mechanical HVAC LLC",
+                "trade": "HVAC",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].is_bid_proposal",
+          "error": "Missing key in actual output",
+          "expected": true
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].company_name",
+          "error": "Missing key in actual output",
+          "expected": "Masters Mechanical HVAC LLC"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].trade",
+          "error": "Missing key in actual output",
+          "expected": "HVAC"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "error": "Missing key in actual output",
+          "expected": "PX-San Antonio (Bulverde)"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].status",
+          "expected": "analyzed",
+          "actual": "error"
+        }
+      ]
+    },
+    {
+      "test_index": 15,
+      "subject": "Fwd: Panda Express Bulverde Rd San Antonio - SWPPP Proposal",
+      "from": "Estimating Team <estimator@vanbruntco.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "error": "Invalid request: {'detail': 'Invalid schema'}",
+                "filename": "PEBRSA SWPPP 10.14.25.pdf",
+                "status": "error"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "PEBRSA SWPPP 10.14.25.pdf",
+                "is_bid_proposal": true,
+                "company_name": "K4 Environmental LLC",
+                "trade": "SWPPP",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].is_bid_proposal",
+          "error": "Missing key in actual output",
+          "expected": true
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].company_name",
+          "error": "Missing key in actual output",
+          "expected": "K4 Environmental LLC"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].trade",
+          "error": "Missing key in actual output",
+          "expected": "SWPPP"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "error": "Missing key in actual output",
+          "expected": "PX-San Antonio (Bulverde)"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].status",
+          "expected": "analyzed",
+          "actual": "error"
+        }
+      ]
+    },
+    {
+      "test_index": 16,
+      "subject": "Welcome to Reducto!",
+      "from": "Donald Wu <donald@reducto.ai>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": false
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "differences": [
+        {
+          "path": "action",
+          "error": "Missing key in actual output",
+          "expected": "skipped"
+        },
+        {
+          "path": "reason",
+          "error": "Missing key in actual output",
+          "expected": "irrelevant"
+        },
+        {
+          "path": "analysis.relevant",
+          "expected": false,
+          "actual": true
+        },
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        }
+      ]
+    },
+    {
+      "test_index": 17,
+      "subject": "Confirm your email address for Reducto",
+      "from": "Reducto <founders@reducto.ai>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant"
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis",
+          "error": "Missing key in actual output",
+          "expected": {
+            "relevant": false,
+            "needs_clarification": false,
+            "bid_proposal_included": false,
+            "forward_result": false,
+            "attachment_analysis": null
+          }
+        }
+      ]
+    },
+    {
+      "test_index": 18,
+      "subject": "Fwd: Panda express Bulverde",
+      "from": "Estimating Team <estimator@vanbruntco.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "error": "Invalid request: {'detail': 'Invalid schema'}",
+                "filename": "Panda express Bulverde.pdf",
+                "status": "error"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Panda express Bulverde.pdf",
+                "is_bid_proposal": true,
+                "company_name": "Built on the Rock Drywall & Acoustics",
+                "trade": "Doors, Frames, Hardware, Drywall, Metal Framing, Acoustical Ceilings, & Panels",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].is_bid_proposal",
+          "error": "Missing key in actual output",
+          "expected": true
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].company_name",
+          "error": "Missing key in actual output",
+          "expected": "Built on the Rock Drywall & Acoustics"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].trade",
+          "error": "Missing key in actual output",
+          "expected": "Doors, Frames, Hardware, Drywall, Metal Framing, Acoustical Ceilings, & Panels"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "error": "Missing key in actual output",
+          "expected": "PX-San Antonio (Bulverde)"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].status",
+          "expected": "analyzed",
+          "actual": "error"
+        }
+      ]
+    },
+    {
+      "test_index": 19,
+      "subject": "Traffic/Safety Barriers - PX- San Antonio (Bulverde)",
+      "from": "Andrea Merritt (Trifecta Traffic) <team@buildingconnected.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": false
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "differences": [
+        {
+          "path": "action",
+          "error": "Missing key in actual output",
+          "expected": "skipped"
+        },
+        {
+          "path": "reason",
+          "error": "Missing key in actual output",
+          "expected": "irrelevant"
+        },
+        {
+          "path": "analysis.relevant",
+          "expected": false,
+          "actual": true
+        },
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        }
+      ]
+    },
+    {
+      "test_index": 20,
+      "subject": "Yogurtland #TX130 \u2013 McKinney, TX / Demo Bid",
+      "from": "info eademolition.com <info@eademolition.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "error": "Invalid request: {'detail': 'Invalid schema'}",
+                "filename": "EAD-20250402.pdf",
+                "status": "error"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": true,
+          "bid_proposal_included": true,
+          "forward_result": true,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "EAD-20250402.pdf",
+                "is_bid_proposal": null,
+                "company_name": null,
+                "trade": null,
+                "project_name": null,
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis.needs_clarification",
+          "expected": true,
+          "actual": false
+        },
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": true
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].status",
+          "expected": "analyzed",
+          "actual": "error"
+        }
+      ]
+    },
+    {
+      "test_index": 21,
+      "subject": "[New] The Business Value of Autodesk Construction Cloud Report",
+      "from": "Autodesk Construction Solutions <comms@acs.autodesk.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant"
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis",
+          "error": "Missing key in actual output",
+          "expected": {
+            "relevant": false,
+            "needs_clarification": false,
+            "bid_proposal_included": false,
+            "forward_result": false,
+            "attachment_analysis": null
+          }
+        }
+      ]
+    },
+    {
+      "test_index": 22,
+      "subject": "Fwd: Proposal for O'Reilly- Prototype Budget Bid Chattanooga, Tennessee",
+      "from": "Estimating Team <estimator@vanbruntco.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "error": "Invalid request: {'detail': 'Invalid schema'}",
+                "filename": "Proposal for O'Reilly- Prototype Budget Bid Chattanooga, Tennessee.pdf",
+                "status": "error"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Proposal for O'Reilly- Prototype Budget Bid Chattanooga, Tennessee.pdf",
+                "is_bid_proposal": true,
+                "company_name": "Advanced Stucco Repair, Inc",
+                "trade": "EIFS",
+                "project_name": "O'Reilly- Prototype Budget Bid",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].is_bid_proposal",
+          "error": "Missing key in actual output",
+          "expected": true
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].company_name",
+          "error": "Missing key in actual output",
+          "expected": "Advanced Stucco Repair, Inc"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].trade",
+          "error": "Missing key in actual output",
+          "expected": "EIFS"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "error": "Missing key in actual output",
+          "expected": "O'Reilly- Prototype Budget Bid"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].status",
+          "expected": "analyzed",
+          "actual": "error"
+        }
+      ]
+    },
+    {
+      "test_index": 23,
+      "subject": "Texas Star D&P - Panda Express - San Antonio, Tx - D&P proposal",
+      "from": "Carlos Sixtos <carlos.s@texasstar-dp.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "error": "Invalid request: {'detail': 'Invalid schema'}",
+                "filename": "Texas Star D&P - Panda Express - San Antonio, Tx - D&P propossal .pdf",
+                "status": "error"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Texas Star D&P - Panda Express - San Antonio, Tx - D&P propossal .pdf",
+                "is_bid_proposal": true,
+                "company_name": "Texas Star Drywall & Painting",
+                "trade": "Drywall & Painting",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].is_bid_proposal",
+          "error": "Missing key in actual output",
+          "expected": true
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].company_name",
+          "error": "Missing key in actual output",
+          "expected": "Texas Star Drywall & Painting"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].trade",
+          "error": "Missing key in actual output",
+          "expected": "Drywall & Painting"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "error": "Missing key in actual output",
+          "expected": "PX-San Antonio (Bulverde)"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].status",
+          "expected": "analyzed",
+          "actual": "error"
+        }
+      ]
+    },
+    {
+      "test_index": 24,
+      "subject": "O'Reilly's Prototype Building",
+      "from": "Rob Perdue <rob.perdue@trivanroofing.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": false
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": true,
+          "attachment_analysis": null
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "test_index": 25,
+      "subject": "O\u2019Reilly Auto Parts \u2013 Hebbronville | Post-Construction Pressure Washing Proposal",
+      "from": "Derek Abakanowicz <waterworkztx@gmail.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "error": "Invalid request: {'detail': 'Invalid schema'}",
+                "filename": "VanBruntCo - O Reilly Auto Parts - Hebbronville TX - Quote 283.pdf",
+                "status": "error"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "VanBruntCo - O Reilly Auto Parts - Hebbronville TX - Quote 283.pdf",
+                "is_bid_proposal": true,
+                "company_name": "Water Workz LLC",
+                "trade": "Pressure Washing",
+                "project_name": "O'Reilly- Prototype Budget Bid",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].is_bid_proposal",
+          "error": "Missing key in actual output",
+          "expected": true
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].company_name",
+          "error": "Missing key in actual output",
+          "expected": "Water Workz LLC"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].trade",
+          "error": "Missing key in actual output",
+          "expected": "Pressure Washing"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "error": "Missing key in actual output",
+          "expected": "O'Reilly- Prototype Budget Bid"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].status",
+          "expected": "analyzed",
+          "actual": "error"
+        }
+      ]
+    },
+    {
+      "test_index": 26,
+      "subject": "Estimate - O'Reilly's Auto Parts - Hebbronville, TX",
+      "from": "M & M Specialty Caulking <quickbooks@notification.intuit.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "error": "Invalid request: {'detail': 'Invalid schema'}",
+                "filename": "Estimate_25041_from_M__M_Specialty_Caulking.pdf",
+                "status": "error"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Estimate_25041_from_M__M_Specialty_Caulking.pdf",
+                "is_bid_proposal": true,
+                "company_name": "M & M Specialty Caulking",
+                "trade": "Caulking",
+                "project_name": "O'Reilly- Prototype Budget Bid",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].is_bid_proposal",
+          "error": "Missing key in actual output",
+          "expected": true
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].company_name",
+          "error": "Missing key in actual output",
+          "expected": "M & M Specialty Caulking"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].trade",
+          "error": "Missing key in actual output",
+          "expected": "Caulking"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "error": "Missing key in actual output",
+          "expected": "O'Reilly- Prototype Budget Bid"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].status",
+          "expected": "analyzed",
+          "actual": "error"
+        }
+      ]
+    },
+    {
+      "test_index": 27,
+      "subject": "Estimate - Panda Bulverde 1",
+      "from": "Trade Tek, LLC <no_reply@intuit.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": false
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "differences": [
+        {
+          "path": "action",
+          "error": "Missing key in actual output",
+          "expected": "skipped"
+        },
+        {
+          "path": "reason",
+          "error": "Missing key in actual output",
+          "expected": "irrelevant"
+        },
+        {
+          "path": "analysis.relevant",
+          "expected": false,
+          "actual": true
+        },
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        }
+      ]
+    },
+    {
+      "test_index": 28,
+      "subject": "Estimate - Panda Bulverde 1",
+      "from": "Trade Tek, LLC <quickbooks@notification.intuit.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "error": "Invalid request: {'detail': 'Invalid schema'}",
+                "filename": "Estimate_PandaBulverde1_from_Trade_Tek_LLC.pdf",
+                "status": "error"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Estimate_PandaBulverde1_from_Trade_Tek_LLC.pdf",
+                "is_bid_proposal": true,
+                "company_name": "Trade Tek, LLC",
+                "trade": "Mechanical",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].is_bid_proposal",
+          "error": "Missing key in actual output",
+          "expected": true
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].company_name",
+          "error": "Missing key in actual output",
+          "expected": "Trade Tek, LLC"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].trade",
+          "error": "Missing key in actual output",
+          "expected": "Mechanical"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "error": "Missing key in actual output",
+          "expected": "PX-San Antonio (Bulverde)"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].status",
+          "expected": "analyzed",
+          "actual": "error"
+        }
+      ]
+    },
+    {
+      "test_index": 29,
+      "subject": "Fwd: OReilly Auto Parts Budget Chattanooga",
+      "from": "Estimating Team <estimator@vanbruntco.com>",
+      "passed": false,
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": false
+        }
+      },
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "differences": [
+        {
+          "path": "action",
+          "error": "Missing key in actual output",
+          "expected": "skipped"
+        },
+        {
+          "path": "reason",
+          "error": "Missing key in actual output",
+          "expected": "irrelevant"
+        },
+        {
+          "path": "analysis.relevant",
+          "expected": false,
+          "actual": true
+        },
+        {
+          "path": "analysis.forward_result",
+          "error": "Missing key in actual output",
+          "expected": false
+        }
+      ]
+    }
+  ]
+}
