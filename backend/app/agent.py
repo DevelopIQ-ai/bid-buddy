@@ -214,7 +214,7 @@ async def email_analysis_node(state: EmailProcessingState) -> EmailProcessingSta
 
 async def forward_email_node(state: EmailProcessingState) -> EmailProcessingState:
     """
-    LangGraph Node: Forward email to subcontractor for clarification.
+    LangGraph Node: Forward email to admin using AgentMail.
 
     Args:
         state: Current workflow state
@@ -223,12 +223,38 @@ async def forward_email_node(state: EmailProcessingState) -> EmailProcessingStat
         Updated state with forward results
     """
     message_data = state["message_data"]
+    forward_to = os.getenv("FORWARD_EMAIL_ADDRESS")
+    inbox_id = message_data.get('inbox_id')
 
-    # TODO: Implement actual email forwarding logic
-    return {
-        "forward_status": "forwarded",
-        "forward_message_id": message_data.get('message_id')
-    }
+    if not forward_to:
+        print("[ERROR] FORWARD_EMAIL_ADDRESS not set in environment")
+        return {
+            "forward_status": "failed",
+            "error": "FORWARD_EMAIL_ADDRESS not configured"
+        }
+
+    client = AgentMail(api_key=os.getenv("AGENTMAIL_API_KEY"))
+
+    try:
+        # Forward using AgentMail send
+        result = client.inboxes.messages.send(
+            inbox_id=inbox_id,
+            to=[forward_to],
+            subject=f"[Action Required] {message_data.get('subject', 'No Subject')}",
+            text=f"This email requires your attention:\n\n{message_data.get('text', '')}"
+        )
+
+        print(f"[INFO] Email forwarded to {forward_to}")
+        return {
+            "forward_status": "forwarded",
+            "forward_message_id": str(result)
+        }
+    except Exception as e:
+        print(f"[ERROR] Failed to forward email: {str(e)}")
+        return {
+            "forward_status": "failed",
+            "error": str(e)
+        }
 
 async def analyze_attachment_node(state: EmailProcessingState) -> EmailProcessingState:
     """

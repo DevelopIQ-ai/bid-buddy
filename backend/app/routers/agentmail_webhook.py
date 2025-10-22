@@ -45,7 +45,10 @@ async def handle_agentmail_webhook(request: Request):
                 "analysis": {
                     "bid_proposal_included": state.get("bid_proposal_included", False),
                     "should_forward": state.get("should_forward", False),
-                    "forward_result": {"status": state.get("forward_status"), "message_id": state.get("forward_message_id")} if state.get("forward_status") else None,
+                    "forward_result": {
+                        "status": state.get("forward_status"),
+                        "message_id": state.get("forward_message_id")
+                    } if state.get("forward_status") else None,
                     "attachment_analysis": {"proposals": state.get("proposals"), "total_count": state.get("total_count")} if state.get("proposals") else None
                 }
             }

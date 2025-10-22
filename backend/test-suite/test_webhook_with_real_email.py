@@ -163,11 +163,18 @@ def main():
             print(f"  - Bid proposal included: {result.get('analysis', {}).get('bid_proposal_included', 'N/A')}")
             print(f"  - Should forward: {result.get('analysis', {}).get('should_forward', 'N/A')}")
 
+            # Show forward result if present
+            if result.get('analysis', {}).get('forward_result'):
+                forward_result = result['analysis']['forward_result']
+                print(f"\n  Forward Result:")
+                print(f"    - Status: {forward_result.get('status')}")
+
+            # Show attachment analysis if present
             if result.get('analysis', {}).get('attachment_analysis'):
                 att_analysis = result['analysis']['attachment_analysis']
-                print(f"  - Attachments analyzed: {att_analysis.get('total_count', 0)}")
+                print(f"\n  Attachments analyzed: {att_analysis.get('total_count', 0)}")
                 if att_analysis.get('proposals'):
-                    print(f"\n  Proposals:")
+                    print(f"  Proposals:")
                     for proposal in att_analysis['proposals']:
                         print(f"    - {proposal.get('filename')}: {proposal.get('company_name', 'N/A')} ({proposal.get('trade', 'N/A')})")
         else:
