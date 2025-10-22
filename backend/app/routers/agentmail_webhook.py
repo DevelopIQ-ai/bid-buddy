@@ -58,7 +58,14 @@ async def handle_agentmail_webhook(request: Request):
                 return {
                     "status": "ok",
                     "action": "skipped",
-                    "reason": "irrelevant"
+                    "reason": "irrelevant",
+                    "analysis": {
+                        "relevant": False,
+                        "needs_clarification": False,
+                        "bid_proposal_included": False,
+                        "forward_result": None,
+                        "attachment_analysis": None
+                    }
                 }
 
             # Extract node1 results
@@ -74,7 +81,9 @@ async def handle_agentmail_webhook(request: Request):
             final_result = {
                 "relevant": True,
                 "needs_clarification": needs_clarification,
-                "bid_proposal_included": bid_proposal_included
+                "bid_proposal_included": bid_proposal_included,
+                "forward_result": None,  # Always include these keys
+                "attachment_analysis": None
             }
 
             # Branch based on node1 results

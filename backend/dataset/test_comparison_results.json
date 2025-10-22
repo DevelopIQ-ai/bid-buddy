@@ -1,0 +1,667 @@
+{
+  "summary": {
+    "total_tests": 10,
+    "passed": 6,
+    "failed": 4,
+    "pass_rate": 60.0,
+    "grade": "D",
+    "total_time_seconds": 52.19,
+    "average_time_seconds": 5.22
+  },
+  "test_results": [
+    {
+      "test_number": 1,
+      "subject": "Level Up with Reducto \u2014 Extract Data & Build Pipelines ",
+      "from": "Adel @ Reducto <adel@hey.reducto.ai>",
+      "has_attachments": false,
+      "attachment_count": 0,
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "actual_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": null,
+          "attachment_analysis": null
+        }
+      },
+      "passed": true,
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": false,
+          "actual": null
+        }
+      ],
+      "error": null,
+      "response_time": 2.97,
+      "critical_differences": []
+    },
+    {
+      "test_number": 2,
+      "subject": "Re: Welcome to Reducto!",
+      "from": "Donald Wu <donald@reducto.ai>",
+      "has_attachments": false,
+      "attachment_count": 0,
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "actual_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": null,
+          "attachment_analysis": null
+        }
+      },
+      "passed": true,
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": false,
+          "actual": null
+        }
+      ],
+      "error": null,
+      "response_time": 3.51,
+      "critical_differences": []
+    },
+    {
+      "test_number": 3,
+      "subject": "Re: Yogurtland - Flower Mound, TX - Breakdown Cost of Interior Framing & Drywall",
+      "from": "Carlos Sixtos <carlos.s@texasstar-dp.com>",
+      "has_attachments": true,
+      "attachment_count": 1,
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Texas Star D&P - #500R.2 - Yogurtland - Flower Mound, Tx - Paint proposal.pdf",
+                "is_bid_proposal": true,
+                "company_name": "Texas Star Drywall & Painting",
+                "trade": "Drywall & Painting",
+                "project_name": "Yogurtland- Flower Mound",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": null,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Texas Star D&P - #500R.2 - Yogurtland - Flower Mound, Tx - Paint proposal.pdf",
+                "is_bid_proposal": true,
+                "company_name": "Texas Star Drywall & Painting",
+                "trade": "Drywall & Painting",
+                "project_name": "Yogurt Land - Flower Mound, Tx",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "passed": true,
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": false,
+          "actual": null
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "type": "value_mismatch",
+          "expected": "Yogurtland- Flower Mound",
+          "actual": "Yogurt Land - Flower Mound, Tx"
+        }
+      ],
+      "error": null,
+      "response_time": 26.91,
+      "critical_differences": []
+    },
+    {
+      "test_number": 4,
+      "subject": "Proposal Submitted - CCH Church Project, Dallas",
+      "from": "Jean Becerra (F&J Glass & Mirror LLC) <team@buildingconnected.com>",
+      "has_attachments": false,
+      "attachment_count": 0,
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Bid-0001695.pdf",
+                "is_bid_proposal": true,
+                "company_name": "F&J Glass & Mirror LLC",
+                "trade": "Glass & Mirror",
+                "project_name": "CCH Church Project- Dallas",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": null,
+          "attachment_analysis": null
+        }
+      },
+      "passed": false,
+      "differences": [
+        {
+          "path": "analysis.bid_proposal_included",
+          "type": "value_mismatch",
+          "expected": true,
+          "actual": false
+        },
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": false,
+          "actual": null
+        },
+        {
+          "path": "analysis.attachment_analysis",
+          "type": "type_mismatch",
+          "expected_type": "dict",
+          "actual_type": "None",
+          "expected": {
+            "proposals": [
+              {
+                "filename": "Bid-0001695.pdf",
+                "is_bid_proposal": true,
+                "company_name": "F&J Glass & Mirror LLC",
+                "trade": "Glass & Mirror",
+                "project_name": "CCH Church Project- Dallas",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          },
+          "actual": null
+        }
+      ],
+      "error": null,
+      "response_time": 2.57,
+      "critical_differences": [
+        {
+          "path": "analysis.bid_proposal_included",
+          "type": "value_mismatch",
+          "expected": true,
+          "actual": false
+        },
+        {
+          "path": "analysis.attachment_analysis",
+          "type": "type_mismatch",
+          "expected_type": "dict",
+          "actual_type": "None",
+          "expected": {
+            "proposals": [
+              {
+                "filename": "Bid-0001695.pdf",
+                "is_bid_proposal": true,
+                "company_name": "F&J Glass & Mirror LLC",
+                "trade": "Glass & Mirror",
+                "project_name": "CCH Church Project- Dallas",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          },
+          "actual": null
+        }
+      ]
+    },
+    {
+      "test_number": 5,
+      "subject": "Proposal Submitted - PX- San Antonio (Bulverde)",
+      "from": "Jean Becerra (F&J Glass & Mirror LLC) <team@buildingconnected.com>",
+      "has_attachments": false,
+      "attachment_count": 0,
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Bid-0001692.pdf",
+                "is_bid_proposal": true,
+                "company_name": "F&J Glass & Mirror LLC",
+                "trade": "Glass & Mirror",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": null,
+          "attachment_analysis": null
+        }
+      },
+      "passed": false,
+      "differences": [
+        {
+          "path": "analysis.bid_proposal_included",
+          "type": "value_mismatch",
+          "expected": true,
+          "actual": false
+        },
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": false,
+          "actual": null
+        },
+        {
+          "path": "analysis.attachment_analysis",
+          "type": "type_mismatch",
+          "expected_type": "dict",
+          "actual_type": "None",
+          "expected": {
+            "proposals": [
+              {
+                "filename": "Bid-0001692.pdf",
+                "is_bid_proposal": true,
+                "company_name": "F&J Glass & Mirror LLC",
+                "trade": "Glass & Mirror",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          },
+          "actual": null
+        }
+      ],
+      "error": null,
+      "response_time": 2.74,
+      "critical_differences": [
+        {
+          "path": "analysis.bid_proposal_included",
+          "type": "value_mismatch",
+          "expected": true,
+          "actual": false
+        },
+        {
+          "path": "analysis.attachment_analysis",
+          "type": "type_mismatch",
+          "expected_type": "dict",
+          "actual_type": "None",
+          "expected": {
+            "proposals": [
+              {
+                "filename": "Bid-0001692.pdf",
+                "is_bid_proposal": true,
+                "company_name": "F&J Glass & Mirror LLC",
+                "trade": "Glass & Mirror",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          },
+          "actual": null
+        }
+      ]
+    },
+    {
+      "test_number": 6,
+      "subject": "Faster workflows with Shared Takeoffs",
+      "from": "PlanHub <connect@planhub.com>",
+      "has_attachments": false,
+      "attachment_count": 0,
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "actual_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": null,
+          "attachment_analysis": null
+        }
+      },
+      "passed": true,
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": false,
+          "actual": null
+        }
+      ],
+      "error": null,
+      "response_time": 2.52,
+      "critical_differences": []
+    },
+    {
+      "test_number": 7,
+      "subject": "Re: Christ Church Bid Roofing",
+      "from": "Daniel Lopez <dan@fbccommercialroofing.com>",
+      "has_attachments": false,
+      "attachment_count": 0,
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": true,
+          "bid_proposal_included": false,
+          "forward_result": true,
+          "attachment_analysis": null
+        }
+      },
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": null,
+          "attachment_analysis": null
+        }
+      },
+      "passed": false,
+      "differences": [
+        {
+          "path": "analysis.relevant",
+          "type": "value_mismatch",
+          "expected": false,
+          "actual": true
+        },
+        {
+          "path": "analysis.needs_clarification",
+          "type": "value_mismatch",
+          "expected": true,
+          "actual": false
+        },
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": true,
+          "actual": null
+        }
+      ],
+      "error": null,
+      "response_time": 2.94,
+      "critical_differences": [
+        {
+          "path": "analysis.relevant",
+          "type": "value_mismatch",
+          "expected": false,
+          "actual": true
+        },
+        {
+          "path": "analysis.needs_clarification",
+          "type": "value_mismatch",
+          "expected": true,
+          "actual": false
+        },
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": true,
+          "actual": null
+        }
+      ]
+    },
+    {
+      "test_number": 8,
+      "subject": "Welcome to Reducto \u2014 Start Parsing in Minutes",
+      "from": "Adel @ Reducto <adel@hey.reducto.ai>",
+      "has_attachments": false,
+      "attachment_count": 0,
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "actual_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": null,
+          "attachment_analysis": null
+        }
+      },
+      "passed": true,
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": false,
+          "actual": null
+        }
+      ],
+      "error": null,
+      "response_time": 2.67,
+      "critical_differences": []
+    },
+    {
+      "test_number": 9,
+      "subject": "Welcome to Reducto!",
+      "from": "Reducto <adit@hey.reducto.ai>",
+      "has_attachments": false,
+      "attachment_count": 0,
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "actual_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": null,
+          "attachment_analysis": null
+        }
+      },
+      "passed": true,
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": false,
+          "actual": null
+        }
+      ],
+      "error": null,
+      "response_time": 2.36,
+      "critical_differences": []
+    },
+    {
+      "test_number": 10,
+      "subject": "Planning/Design Project Report",
+      "from": "PlanHub <planhubnotifications@planhub.com>",
+      "has_attachments": false,
+      "attachment_count": 0,
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": null,
+          "attachment_analysis": null
+        }
+      },
+      "passed": false,
+      "differences": [
+        {
+          "path": "analysis.relevant",
+          "type": "value_mismatch",
+          "expected": false,
+          "actual": true
+        },
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": false,
+          "actual": null
+        }
+      ],
+      "error": null,
+      "response_time": 3.0,
+      "critical_differences": [
+        {
+          "path": "analysis.relevant",
+          "type": "value_mismatch",
+          "expected": false,
+          "actual": true
+        }
+      ]
+    }
+  ],
+  "common_issues": {
+    "analysis.forward_result": 10,
+    "analysis.bid_proposal_included": 2,
+    "analysis.attachment_analysis": 2,
+    "analysis.relevant": 2,
+    "analysis.attachment_analysis.proposals[0].project_name": 1,
+    "analysis.needs_clarification": 1
+  }
+}

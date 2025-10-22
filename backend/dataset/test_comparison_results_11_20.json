@@ -1,0 +1,816 @@
+{
+  "summary": {
+    "total_tests": 10,
+    "passed": 2,
+    "failed": 8,
+    "pass_rate": 20.0,
+    "grade": "F",
+    "total_time_seconds": 226.74,
+    "average_time_seconds": 22.67
+  },
+  "test_results": [
+    {
+      "test_number": 11,
+      "subject": "Fwd: Estimate 2023-095 from Mustang Electrical Services, LLC",
+      "from": "Estimating Team <estimator@vanbruntco.com>",
+      "has_attachments": true,
+      "attachment_count": 1,
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Estimate_2023095_from_Mustang_Electrical_Services.pdf",
+                "is_bid_proposal": true,
+                "company_name": "Mustang Electrical Services",
+                "trade": "Electrical",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": null,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Estimate_2023095_from_Mustang_Electrical_Services.pdf",
+                "is_bid_proposal": true,
+                "company_name": "Mustang Electrical Services",
+                "trade": "Electrical",
+                "project_name": "Panda Express located at 2452 W Loop 1604 S in San Antonio, Texas",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "passed": false,
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": false,
+          "actual": null
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "type": "value_mismatch",
+          "expected": "PX-San Antonio (Bulverde)",
+          "actual": "Panda Express located at 2452 W Loop 1604 S in San Antonio, Texas"
+        }
+      ],
+      "error": null,
+      "response_time": 38.44,
+      "critical_differences": [
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "type": "value_mismatch",
+          "expected": "PX-San Antonio (Bulverde)",
+          "actual": "Panda Express located at 2452 W Loop 1604 S in San Antonio, Texas"
+        }
+      ]
+    },
+    {
+      "test_number": 12,
+      "subject": "Fwd: O'Reilly- Prototype Budget Bid (CONCRETE PROPOSAL ATTACHED)",
+      "from": "Estimating Team <estimator@vanbruntco.com>",
+      "has_attachments": true,
+      "attachment_count": 4,
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "OReilly- Prototype Budget Bid.docx (1).pdf",
+                "is_bid_proposal": true,
+                "company_name": "Divine Concrete",
+                "trade": "Concrete",
+                "project_name": "O'Reilly- Prototype Budget Bid",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": null,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "OReilly- Prototype Budget Bid.docx (1).pdf",
+                "is_bid_proposal": true,
+                "company_name": "DIVINE CONCRETE CONTRACTORS",
+                "trade": "Concrete",
+                "project_name": "O'Reilly- Prototype Budget Bid",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "passed": false,
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": false,
+          "actual": null
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].company_name",
+          "type": "value_mismatch",
+          "expected": "Divine Concrete",
+          "actual": "DIVINE CONCRETE CONTRACTORS"
+        }
+      ],
+      "error": null,
+      "response_time": 48.62,
+      "critical_differences": [
+        {
+          "path": "analysis.attachment_analysis.proposals[0].company_name",
+          "type": "value_mismatch",
+          "expected": "Divine Concrete",
+          "actual": "DIVINE CONCRETE CONTRACTORS"
+        }
+      ]
+    },
+    {
+      "test_number": 13,
+      "subject": "Fwd: Panda Bulverde",
+      "from": "Estimating Team <estimator@vanbruntco.com>",
+      "has_attachments": true,
+      "attachment_count": 2,
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Utilitie & Plumbing Proposal_Panda Bulverde_101425.pdf",
+                "is_bid_proposal": true,
+                "company_name": "Grisham Plumbing LLC",
+                "trade": "Utilities & Plumbing",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": null,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Utilitie & Plumbing Proposal_Panda Bulverde_101425.pdf",
+                "is_bid_proposal": true,
+                "company_name": "GRISHAM PLUMBING LLC",
+                "trade": "Plumbing",
+                "project_name": "Panda Express Bulverde Rd.",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "passed": false,
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": false,
+          "actual": null
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].company_name",
+          "type": "value_mismatch",
+          "expected": "Grisham Plumbing LLC",
+          "actual": "GRISHAM PLUMBING LLC"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].trade",
+          "type": "value_mismatch",
+          "expected": "Utilities & Plumbing",
+          "actual": "Plumbing"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "type": "value_mismatch",
+          "expected": "PX-San Antonio (Bulverde)",
+          "actual": "Panda Express Bulverde Rd."
+        }
+      ],
+      "error": null,
+      "response_time": 37.13,
+      "critical_differences": [
+        {
+          "path": "analysis.attachment_analysis.proposals[0].company_name",
+          "type": "value_mismatch",
+          "expected": "Grisham Plumbing LLC",
+          "actual": "GRISHAM PLUMBING LLC"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].trade",
+          "type": "value_mismatch",
+          "expected": "Utilities & Plumbing",
+          "actual": "Plumbing"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "type": "value_mismatch",
+          "expected": "PX-San Antonio (Bulverde)",
+          "actual": "Panda Express Bulverde Rd."
+        }
+      ]
+    },
+    {
+      "test_number": 14,
+      "subject": "Fwd: Panda Express Bulverde Rd",
+      "from": "Estimating Team <estimator@vanbruntco.com>",
+      "has_attachments": true,
+      "attachment_count": 1,
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "PANDA EXPRESS BULVERDE - VAN BRUNT & CO.xlsx",
+                "is_bid_proposal": true,
+                "company_name": "Design Drywall, Inc",
+                "trade": "Drywall",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": null,
+          "attachment_analysis": null
+        }
+      },
+      "passed": false,
+      "differences": [
+        {
+          "path": "analysis.bid_proposal_included",
+          "type": "value_mismatch",
+          "expected": true,
+          "actual": false
+        },
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": false,
+          "actual": null
+        },
+        {
+          "path": "analysis.attachment_analysis",
+          "type": "type_mismatch",
+          "expected_type": "dict",
+          "actual_type": "None",
+          "expected": {
+            "proposals": [
+              {
+                "filename": "PANDA EXPRESS BULVERDE - VAN BRUNT & CO.xlsx",
+                "is_bid_proposal": true,
+                "company_name": "Design Drywall, Inc",
+                "trade": "Drywall",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          },
+          "actual": null
+        }
+      ],
+      "error": null,
+      "response_time": 2.95,
+      "critical_differences": [
+        {
+          "path": "analysis.bid_proposal_included",
+          "type": "value_mismatch",
+          "expected": true,
+          "actual": false
+        },
+        {
+          "path": "analysis.attachment_analysis",
+          "type": "type_mismatch",
+          "expected_type": "dict",
+          "actual_type": "None",
+          "expected": {
+            "proposals": [
+              {
+                "filename": "PANDA EXPRESS BULVERDE - VAN BRUNT & CO.xlsx",
+                "is_bid_proposal": true,
+                "company_name": "Design Drywall, Inc",
+                "trade": "Drywall",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          },
+          "actual": null
+        }
+      ]
+    },
+    {
+      "test_number": 15,
+      "subject": "Fwd: Panda Express Bulverde TX. HVAC Bid",
+      "from": "Estimating Team <estimator@vanbruntco.com>",
+      "has_attachments": true,
+      "attachment_count": 1,
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Panda Express Bulverde TX.pdf",
+                "is_bid_proposal": true,
+                "company_name": "Masters Mechanical HVAC LLC",
+                "trade": "HVAC",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": null,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Panda Express Bulverde TX.pdf",
+                "is_bid_proposal": true,
+                "company_name": "Masters Mechanical HVAC LLC",
+                "trade": "HVAC",
+                "project_name": "Panda Express Bulverde TX. 26719 N. HWY 281 78260",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "passed": false,
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": false,
+          "actual": null
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "type": "value_mismatch",
+          "expected": "PX-San Antonio (Bulverde)",
+          "actual": "Panda Express Bulverde TX. 26719 N. HWY 281 78260"
+        }
+      ],
+      "error": null,
+      "response_time": 26.33,
+      "critical_differences": [
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "type": "value_mismatch",
+          "expected": "PX-San Antonio (Bulverde)",
+          "actual": "Panda Express Bulverde TX. 26719 N. HWY 281 78260"
+        }
+      ]
+    },
+    {
+      "test_number": 16,
+      "subject": "Fwd: Panda Express Bulverde Rd San Antonio - SWPPP Proposal",
+      "from": "Estimating Team <estimator@vanbruntco.com>",
+      "has_attachments": true,
+      "attachment_count": 7,
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "PEBRSA SWPPP 10.14.25.pdf",
+                "is_bid_proposal": true,
+                "company_name": "K4 Environmental LLC",
+                "trade": "SWPPP",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": null,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "PEBRSA SWPPP 10.14.25.pdf",
+                "is_bid_proposal": true,
+                "company_name": "K4 Environmental LLC",
+                "trade": "Erosion Control / SWPPP",
+                "project_name": "Panda Express Bulverde Rd San Antonio",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "passed": false,
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": false,
+          "actual": null
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].trade",
+          "type": "value_mismatch",
+          "expected": "SWPPP",
+          "actual": "Erosion Control / SWPPP"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "type": "value_mismatch",
+          "expected": "PX-San Antonio (Bulverde)",
+          "actual": "Panda Express Bulverde Rd San Antonio"
+        }
+      ],
+      "error": null,
+      "response_time": 26.99,
+      "critical_differences": [
+        {
+          "path": "analysis.attachment_analysis.proposals[0].trade",
+          "type": "value_mismatch",
+          "expected": "SWPPP",
+          "actual": "Erosion Control / SWPPP"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "type": "value_mismatch",
+          "expected": "PX-San Antonio (Bulverde)",
+          "actual": "Panda Express Bulverde Rd San Antonio"
+        }
+      ]
+    },
+    {
+      "test_number": 17,
+      "subject": "Welcome to Reducto!",
+      "from": "Donald Wu <donald@reducto.ai>",
+      "has_attachments": false,
+      "attachment_count": 0,
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "actual_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": null,
+          "attachment_analysis": null
+        }
+      },
+      "passed": true,
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": false,
+          "actual": null
+        }
+      ],
+      "error": null,
+      "response_time": 2.81,
+      "critical_differences": []
+    },
+    {
+      "test_number": 18,
+      "subject": "Confirm your email address for Reducto",
+      "from": "Reducto <founders@reducto.ai>",
+      "has_attachments": false,
+      "attachment_count": 0,
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "actual_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": null,
+          "attachment_analysis": null
+        }
+      },
+      "passed": true,
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": false,
+          "actual": null
+        }
+      ],
+      "error": null,
+      "response_time": 3.13,
+      "critical_differences": []
+    },
+    {
+      "test_number": 19,
+      "subject": "Fwd: Panda express Bulverde",
+      "from": "Estimating Team <estimator@vanbruntco.com>",
+      "has_attachments": true,
+      "attachment_count": 1,
+      "expected_output": {
+        "status": "ok",
+        "action": null,
+        "reason": null,
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": false,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Panda express Bulverde.pdf",
+                "is_bid_proposal": true,
+                "company_name": "Built on the Rock Drywall & Acoustics",
+                "trade": "Doors, Frames, Hardware, Drywall, Metal Framing, Acoustical Ceilings, & Panels",
+                "project_name": "PX-San Antonio (Bulverde)",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": true,
+          "forward_result": null,
+          "attachment_analysis": {
+            "proposals": [
+              {
+                "filename": "Panda express Bulverde.pdf",
+                "is_bid_proposal": true,
+                "company_name": "BUILT ON THE ROCK INDUSTRIES, LLC",
+                "trade": "Drywall & Acoustics",
+                "project_name": "Panda Express Bulverde",
+                "status": "analyzed"
+              }
+            ],
+            "total_count": 1
+          }
+        }
+      },
+      "passed": false,
+      "differences": [
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": false,
+          "actual": null
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].company_name",
+          "type": "value_mismatch",
+          "expected": "Built on the Rock Drywall & Acoustics",
+          "actual": "BUILT ON THE ROCK INDUSTRIES, LLC"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].trade",
+          "type": "value_mismatch",
+          "expected": "Doors, Frames, Hardware, Drywall, Metal Framing, Acoustical Ceilings, & Panels",
+          "actual": "Drywall & Acoustics"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "type": "value_mismatch",
+          "expected": "PX-San Antonio (Bulverde)",
+          "actual": "Panda Express Bulverde"
+        }
+      ],
+      "error": null,
+      "response_time": 37.54,
+      "critical_differences": [
+        {
+          "path": "analysis.attachment_analysis.proposals[0].company_name",
+          "type": "value_mismatch",
+          "expected": "Built on the Rock Drywall & Acoustics",
+          "actual": "BUILT ON THE ROCK INDUSTRIES, LLC"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].trade",
+          "type": "value_mismatch",
+          "expected": "Doors, Frames, Hardware, Drywall, Metal Framing, Acoustical Ceilings, & Panels",
+          "actual": "Drywall & Acoustics"
+        },
+        {
+          "path": "analysis.attachment_analysis.proposals[0].project_name",
+          "type": "value_mismatch",
+          "expected": "PX-San Antonio (Bulverde)",
+          "actual": "Panda Express Bulverde"
+        }
+      ]
+    },
+    {
+      "test_number": 20,
+      "subject": "Traffic/Safety Barriers - PX- San Antonio (Bulverde)",
+      "from": "Andrea Merritt (Trifecta Traffic) <team@buildingconnected.com>",
+      "has_attachments": false,
+      "attachment_count": 0,
+      "expected_output": {
+        "status": "ok",
+        "action": "skipped",
+        "reason": "irrelevant",
+        "analysis": {
+          "relevant": false,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": false,
+          "attachment_analysis": null
+        }
+      },
+      "actual_output": {
+        "status": "ok",
+        "analysis": {
+          "relevant": true,
+          "needs_clarification": false,
+          "bid_proposal_included": false,
+          "forward_result": null,
+          "attachment_analysis": null
+        }
+      },
+      "passed": false,
+      "differences": [
+        {
+          "path": "analysis.relevant",
+          "type": "value_mismatch",
+          "expected": false,
+          "actual": true
+        },
+        {
+          "path": "analysis.forward_result",
+          "type": "type_mismatch",
+          "expected_type": "bool",
+          "actual_type": "None",
+          "expected": false,
+          "actual": null
+        }
+      ],
+      "error": null,
+      "response_time": 2.8,
+      "critical_differences": [
+        {
+          "path": "analysis.relevant",
+          "type": "value_mismatch",
+          "expected": false,
+          "actual": true
+        }
+      ]
+    }
+  ],
+  "common_issues": {
+    "analysis.forward_result": 10,
+    "analysis.attachment_analysis.proposals[0].project_name": 5,
+    "analysis.attachment_analysis.proposals[0].company_name": 3,
+    "analysis.attachment_analysis.proposals[0].trade": 3,
+    "analysis.bid_proposal_included": 1,
+    "analysis.attachment_analysis": 1,
+    "analysis.relevant": 1
+  }
+}

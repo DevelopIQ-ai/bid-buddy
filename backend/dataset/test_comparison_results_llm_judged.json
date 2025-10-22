@@ -1,0 +1,103 @@
+{
+  "summary": {
+    "total_tests": 10,
+    "original_passed": 6,
+    "llm_passed": 6,
+    "average_score": 0.72,
+    "pass_rate": 60.0,
+    "grade": "D"
+  },
+  "evaluations": [
+    {
+      "test_number": 1,
+      "original_pass": true,
+      "llm_pass": true,
+      "llm_score": 1.0,
+      "reasoning": "Test already passed strict comparison"
+    },
+    {
+      "test_number": 2,
+      "original_pass": true,
+      "llm_pass": true,
+      "llm_score": 1.0,
+      "reasoning": "Test already passed strict comparison"
+    },
+    {
+      "test_number": 3,
+      "original_pass": true,
+      "llm_pass": true,
+      "llm_score": 1.0,
+      "reasoning": "Test already passed strict comparison"
+    },
+    {
+      "test_number": 4,
+      "subject": "Proposal Submitted - CCH Church Project, Dallas",
+      "original_pass": false,
+      "llm_pass": false,
+      "llm_score": 0.3,
+      "reasoning": "The actual output has significant discrepancies in the bid proposal inclusion and attachment analysis, which are critical for evaluation. The classification is inconsistent as it indicates no bid proposal included despite the expected output stating otherwise. The extraction details are missing entirely.",
+      "category_scores": {
+        "classification": 0.0,
+        "extraction": 0.0
+      }
+    },
+    {
+      "test_number": 5,
+      "subject": "Proposal Submitted - PX- San Antonio (Bulverde)",
+      "original_pass": false,
+      "llm_pass": false,
+      "llm_score": 0.3,
+      "reasoning": "The actual output fails to include the bid proposal, which is inconsistent with the expected output. Additionally, the attachment analysis is null, which is a significant deviation from the expected structure. While the classification of relevance and needs clarification is correct, the overall failure in bid proposal inclusion and attachment analysis leads to a low score.",
+      "category_scores": {
+        "classification": 0.5,
+        "extraction": 0.0
+      }
+    },
+    {
+      "test_number": 6,
+      "original_pass": true,
+      "llm_pass": true,
+      "llm_score": 1.0,
+      "reasoning": "Test already passed strict comparison"
+    },
+    {
+      "test_number": 7,
+      "subject": "Re: Christ Church Bid Roofing",
+      "original_pass": false,
+      "llm_pass": false,
+      "llm_score": 0.2,
+      "reasoning": "The actual output has significant discrepancies in classification, particularly in relevance and needs clarification. The forward_result is also not a boolean value, which is a type mismatch. Given these issues, the output does not meet the expected criteria.",
+      "category_scores": {
+        "classification": 0.0,
+        "extraction": 0.5
+      }
+    },
+    {
+      "test_number": 8,
+      "original_pass": true,
+      "llm_pass": true,
+      "llm_score": 1.0,
+      "reasoning": "Test already passed strict comparison"
+    },
+    {
+      "test_number": 9,
+      "original_pass": true,
+      "llm_pass": true,
+      "llm_score": 1.0,
+      "reasoning": "Test already passed strict comparison"
+    },
+    {
+      "test_number": 10,
+      "subject": "Planning/Design Project Report",
+      "original_pass": false,
+      "llm_pass": false,
+      "llm_score": 0.4,
+      "reasoning": "The actual output has a value mismatch for 'relevant' and a type mismatch for 'forward_result'. The classification is inconsistent due to the incorrect relevance. The extraction scores lower due to the mismatches.",
+      "category_scores": {
+        "classification": 0.2,
+        "extraction": 0.6
+      }
+    }
+  ],
+  "improvements": []
+}

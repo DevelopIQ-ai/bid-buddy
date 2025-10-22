@@ -88,14 +88,32 @@ async def node_1_email_analysis(message_data: Dict[str, Any]) -> Dict[str, Any]:
                 has_attachment = True
                 break
 
-    prompt = f"""You are a general contractor's assistant, in charge of sorting through emails from subcontractors who are bidding on a project. Some of the emails will be asking questions about the project, and some will be bid proposals. Some will also be spam, ads, or other irrelevant emails.
+    prompt = f"""You are a general contractor's assistant sorting emails from subcontractors bidding on construction projects.
 
-    IMPORTANT RULES:
-    1. A bid proposal can ONLY be included if there is a PDF or DOCX attachment
-    2. If there is NO attachment, bid_proposal_included MUST be false, even if the email mentions a proposal
-    3. If the email has a PDF or DOCX attachment, it is probably a bid proposal, unless the text suggests otherwise
-    4. An email can both have a bid proposal AND be asking questions about the project
-    5. If you're not sure if relevant, assume it IS relevant (better safe than sorry)
+    CLASSIFICATION RULES:
+
+    RELEVANT emails are:
+    - Bid proposals or estimates from construction companies
+    - Questions about specific construction projects
+    - Updates on submitted bids or proposals
+    - Communications from BuildingConnected, PlanHub about specific projects
+    - Emails mentioning specific projects (Panda Express, O'Reilly, Yogurtland, etc.)
+
+    IRRELEVANT emails are:
+    - Marketing emails about software tools (Reducto, Autodesk, etc.)
+    - Welcome/signup confirmation emails
+    - Generic product announcements
+    - Newsletter-style content
+    - Emails not related to construction bidding
+
+    BID PROPOSAL RULES:
+    1. bid_proposal_included = true ONLY if there is a PDF/DOCX attachment AND the email mentions submitting a bid/proposal
+    2. If NO attachment, bid_proposal_included MUST be false
+    3. "Proposal Submitted" without attachment means they submitted elsewhere, not included here
+
+    NEEDS CLARIFICATION:
+    - True if the email is asking questions about project details
+    - True if requesting more information about the project
 
     Email:
     - From: {from_}
@@ -179,12 +197,21 @@ async def node_2a_analyze_attachment(message_data: Dict[str, Any]) -> Dict[str, 
             filename = attachment.get('filename', 'document.pdf')
             result = extract_from_file(file_data, filename, active_projects=[])
 
+            # Debug: print what Reducto returned
+            print(f"    [DEBUG] Raw Reducto result: {result}")
+
+            # Helper to extract value from citation object or plain value
+            def extract_value(field):
+                if isinstance(field, dict) and 'value' in field:
+                    return field['value']
+                return field
+
             proposals.append({
                 "filename": filename,
-                "is_bid_proposal": result.get("is_bid_proposal", False),
-                "company_name": result.get("company_name"),
-                "trade": result.get("trade"),
-                "project_name": result.get("project_name"),
+                "is_bid_proposal": extract_value(result.get("is_bid_proposal", False)),
+                "company_name": extract_value(result.get("company_name")),
+                "trade": extract_value(result.get("trade")),
+                "project_name": extract_value(result.get("project_name")),
                 "status": "analyzed"
             })
 

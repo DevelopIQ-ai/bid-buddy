@@ -1,0 +1,30 @@
+{
+  "overall_score": 0.5,
+  "overall_grade": "F",
+  "category_scores": {
+    "classification": {
+      "score": 1.0,
+      "count": 1
+    },
+    "extraction": {
+      "score": 0.0,
+      "count": 1
+    }
+  },
+  "individual_results": [
+    {
+      "test_index": 0,
+      "type": "classification",
+      "grade": "A",
+      "score": 1.0,
+      "reasoning": "The email is relevant to a construction bid, correctly identified as having a bid proposal due to attachments, and does not ask for clarification."
+    },
+    {
+      "test_index": 0,
+      "type": "extraction",
+      "grade": "F",
+      "score": 0.0,
+      "reasoning": "All extracted values were incorrect or missing, resulting in a score of 0.0 across all categories."
+    }
+  ]
+}

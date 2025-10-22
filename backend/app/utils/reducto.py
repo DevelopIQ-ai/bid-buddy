@@ -36,7 +36,7 @@ def process_agentmail_attachment(attachment_content: Union[str, bytes], filename
     # Use the existing save_extraction_to_db function
     return save_extraction_to_db(file_data, filename, attachment_url, active_projects, table_name, access_token)
 
-def extract_from_file(file_data: bytes, filename: str, timeout: int = 300, active_projects: list[str] = []) -> Dict[str, Any]:
+def extract_from_file(file_data: bytes, filename: str, timeout: int = 600, active_projects: list[str] = []) -> Dict[str, Any]:
     """
     Extract file contents from raw file data using Reducto API.
     
@@ -76,68 +76,36 @@ def extract_from_file(file_data: bytes, filename: str, timeout: int = 300, activ
     if not file_id:
         raise Exception("No file ID returned from upload")
     
-    # Step 2: Submit extraction job with the uploaded file ID
-    extract_url = "https://platform.reducto.ai/extract"
+    # Step 2: Submit extraction job with the uploaded file ID (using async endpoint)
+    extract_url = "https://platform.reducto.ai/extract_async"
     
     payload = {
+        "async": {"priority": False},
         "input": file_id,
         "instructions": {
-            "schema": [
-                {
-                    "description": "The name of the company",
-                    "name": "company_name",
-                    "type": "text"
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "company_name": {
+                        "type": "string",
+                        "description": "The company name that prepared this bid/estimate. Look for company letterhead, logos, or signature blocks."
+                    },
+                    "trade": {
+                        "type": "string", 
+                        "description": "Type of construction work (e.g., Electrical, Plumbing, HVAC, Drywall & Painting). Base on actual work items in the document."
+                    },
+                    "is_bid_proposal": {
+                        "type": "boolean",
+                        "description": "True if document has line items with prices or is labeled as estimate/proposal/bid. False if it's a flyer or general info."
+                    },
+                    "project_name": {
+                        "type": "string",
+                        "description": f"The specific project name or property address. Common projects: {', '.join(active_projects) if active_projects else 'Panda Express, O\'Reilly Auto Parts, Yogurtland, Church projects'}"
+                    }
                 },
-                {
-                    "description": "The type of work being performed",
-                    "name": "trade",
-                    "type": "text"
-                },
-                {
-                    "description": "Whether or not the document is a bid proposal",
-                    "name": "is_bid_proposal",
-                    "type": "boolean"
-                },
-                {
-                    "description": "The project name that the document is for",
-                    "name": "project_name",
-                    "type": "text"
-                }
-            ],
-            "system_prompt": f"""You are a construction document analyzer. Extract the following information:
-       
-        1. trade: The type of work being done based on the line items in the document.
-           Common trades include: Electrical, Plumbing, HVAC,
-           Roofing, Flooring, Painting, Drywall, Concrete, Steel, Framing,
-           Landscaping, Excavation, etc.
-
-           In the case that there are multiple trades, return them as a single string like the following examples:
-           Electrical & Plumbing
-           Electrical, Plumbing, & HVAC
-
-           So if there are 2 trades, combine them with &
-           2 or more should uses commas and one & at the end.
-           
-        2. company_name: Extract the main company name from the document.
-           This is usually the bidding company or contractor name.
-
-        3. is_bid_proposal: Whether the document is a bid proposal.
-           If it is a bid proposal, it should list a company name in the construction industry and the line items with numbers.
-           If it is a flyer, image, or some arbitrary attachment that is not a bid proposal, it is not a bid proposal.
-
-           If it is a bid proposal, return true.
-           If it is not a bid proposal, return false.
-
-        4. project_name: The project name that the document is for.
-           Is will be for one of the following active projects: {', '.join(active_projects) if active_projects else 'No active projects'}
-           If it is for one of the active projects, return the project name.
-           If it is not for one of the active projects, return null.
-       
-        Be precise and only extract information that is explicitly stated.
-        Return trade as a single string.
-        Return company_name as a single string.
-        Return is_bid_proposal as a boolean.
-        Return project_name as a single string."""
+                "required": ["company_name", "trade", "is_bid_proposal", "project_name"]
+            },
+            "system_prompt": "You are analyzing a construction bid document. Extract the company submitting the bid, the type of work (trade), whether it's a formal bid proposal, and the project name. Be precise and only extract information explicitly stated in the document."
         },
         "settings": {
             "include_images": False,
@@ -190,7 +158,7 @@ def extract_from_file(file_data: bytes, filename: str, timeout: int = 300, activ
         "Content-Type": "application/json"
     }
     
-    # Step 3: Submit the extraction job
+    # Step 3: Submit the extraction job (async)
     response = requests.post(extract_url, json=payload, headers=headers)
     
     if response.status_code == 422:
@@ -201,14 +169,10 @@ def extract_from_file(file_data: bytes, filename: str, timeout: int = 300, activ
     
     initial_response = response.json()
     
-    # If result is already available, return it
-    if "result" in initial_response and initial_response["result"]:
-        return initial_response["result"]
-    
-    # Otherwise, get the job_id and poll
+    # Get the job_id from async response
     job_id = initial_response.get("job_id")
     if not job_id:
-        raise Exception("No job_id returned from extraction request")
+        raise Exception("No job_id returned from async extraction request")
     
     # Step 4: Poll for job completion
     poll_url = f"https://platform.reducto.ai/job/{job_id}"
@@ -231,12 +195,27 @@ def extract_from_file(file_data: bytes, filename: str, timeout: int = 300, activ
         poll_data = poll_response.json()
         status = poll_data.get("status")
         
-        if status == "Complete":
+        if status == "Completed" or status == "Complete":
             # Return the extracted fields
-            result = poll_data.get("result", {}).get("result")
-            if result:
+            # The result structure might be nested differently
+            result = poll_data.get("result")
+            
+            # Debug logging
+            print(f"    [DEBUG] Poll data keys: {poll_data.keys()}")
+            print(f"    [DEBUG] Result type: {type(result)}")
+            
+            # Handle nested result.result structure
+            if isinstance(result, dict) and "result" in result:
+                extracted = result["result"]
+                # If result is an array, get the first item
+                if isinstance(extracted, list) and len(extracted) > 0:
+                    return extracted[0]
+                return extracted
+            # If result is directly an array, get first item
+            elif isinstance(result, list) and len(result) > 0:
+                return result[0]
+            elif result:
                 return result
-                # result = { "company_name": "John Doe", "trade": "Electrical & Plumbing", "is_bid_proposal": True, "project_name": "Project 1" }
             else:
                 raise Exception("Job completed but no result found")
         
