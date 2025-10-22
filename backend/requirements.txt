@@ -19,3 +19,5 @@ requests>=2.31.0
 dedalus-labs
 agentmail
 resend
+langgraph>=1.0.0
+langchain-core>=1.0.0
