@@ -1,0 +1,4 @@
+# MCP Server Setup Commands for Bid Buddy
+
+claude mcp add nia -e NIA_API_KEY=YOUR_NIA_API_KEY -e NIA_API_URL=https://apigcp.trynia.ai/ -- pipx run --no-cache nia-mcp-server
+claude mcp add langsmith -e LANGCHAIN_API_KEY=your-langchain-api-key -- uvx langsmith-mcp-server
