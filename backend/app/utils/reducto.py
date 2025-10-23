@@ -100,7 +100,7 @@ def extract_from_file(file_data: bytes, filename: str, timeout: int = 600, activ
                     },
                     "project_name": {
                         "type": "string",
-                        "description": f"The specific project name or property address. Common projects: {', '.join(active_projects) if active_projects else 'Panda Express, O\'Reilly Auto Parts, Yogurtland, Church projects'}"
+                        "description": f"The specific project name or property address. Choices include: {', '.join(active_projects) if active_projects else 'Panda Express, O\'Reilly Auto Parts, Yogurtland, Church projects'}"
                     }
                 },
                 "required": ["company_name", "trade", "is_bid_proposal", "project_name"]
