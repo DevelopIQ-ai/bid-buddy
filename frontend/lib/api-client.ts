@@ -51,11 +51,11 @@ class APIClient {
 
   // Project endpoints
   async getProjects() {
-    return this.request('/api/projects/')
+    return this.request('/api/projects')
   }
 
   async createProject(projectData: Record<string, unknown>) {
-    return this.request('/api/projects/', {
+    return this.request('/api/projects', {
       method: 'POST',
       body: JSON.stringify(projectData),
     })
