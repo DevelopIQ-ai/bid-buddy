@@ -1,20 +1,86 @@
 import asyncio
 import json
 import os
-from typing import Dict, Any, Optional, TypedDict, Literal
+from typing import Dict, Any, Optional, TypedDict, Literal, List
 from dedalus_labs import AsyncDedalus, DedalusRunner
 from dotenv import load_dotenv
 from agentmail import AgentMail
 from app.utils.reducto import extract_from_file
+from app.utils.google_drive import upload_attachment_to_drive
 from langgraph.graph import StateGraph, START, END
+from supabase import create_client, Client
+import logging
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
+
+
+def get_enabled_projects() -> List[str]:
+    """
+    Fetch all enabled projects from the database.
+    Since we're processing emails that could be for any user, we need to get ALL enabled projects.
+    
+    Returns:
+        List of project names that are enabled across all users
+    """
+    try:
+        # Get Supabase client 
+        SUPABASE_URL = os.getenv("SUPABASE_URL")
+        SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        
+        if not SUPABASE_SERVICE_KEY:
+            # Try to get projects for a specific user if we know who (evan@developiq.ai for now)
+            # In production, this should be passed from the webhook context
+            SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
+            
+            if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+                logger.warning("Supabase credentials not configured, using default projects")
+                return ["7Brew-Canton TX", "7Brew-Snyder TX", "CCH Church Project- Dallas", 
+                       "Concrete Self Performance", "O'Reilly Prototype Budget Bid", 
+                       "Popeyes- Glen Heights", "PX-San Antonio (Bulverde)", "Yogurtland- Flower Mound"]
+            
+            # Use anon key with a hardcoded user ID for evan@developiq.ai
+            # This is a temporary workaround until we have service role key
+            supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+            
+            # Use evan@developiq.ai's user ID directly (from previous debugging)
+            evan_user_id = "4191330b-1c80-4605-854c-09b20c760a81"
+            
+            # Query enabled projects for this specific user
+            response = supabase.table('projects').select('name').eq('enabled', True).eq('user_id', evan_user_id).execute()
+        else:
+            # With service role key, we can bypass RLS and get all projects
+            supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+            
+            # Query ALL enabled projects across all users
+            response = supabase.table('projects').select('name').eq('enabled', True).execute()
+        
+        if response.data:
+            project_names = [project['name'] for project in response.data]
+            logger.info(f"Loaded {len(project_names)} enabled projects from database")
+            return project_names if project_names else ["7Brew-Canton TX", "7Brew-Snyder TX", "CCH Church Project- Dallas", 
+                   "Concrete Self Performance", "O'Reilly Prototype Budget Bid", 
+                   "Popeyes- Glen Heights", "PX-San Antonio (Bulverde)", "Yogurtland- Flower Mound"]
+        else:
+            logger.warning("No enabled projects found in database, using default list")
+            return ["7Brew-Canton TX", "7Brew-Snyder TX", "CCH Church Project- Dallas", 
+                   "Concrete Self Performance", "O'Reilly Prototype Budget Bid", 
+                   "Popeyes- Glen Heights", "PX-San Antonio (Bulverde)", "Yogurtland- Flower Mound"]
+            
+    except Exception as e:
+        logger.error(f"Error fetching enabled projects: {e}")
+        # Return default list on error
+        return ["7Brew-Canton TX", "7Brew-Snyder TX", "CCH Church Project- Dallas", 
+               "Concrete Self Performance", "O'Reilly Prototype Budget Bid", 
+               "Popeyes- Glen Heights", "PX-San Antonio (Bulverde)", "Yogurtland- Flower Mound"]
 
 
 # Define the state schema for the email processing workflow
 class EmailProcessingState(TypedDict, total=False):
     """State for the email processing workflow. All fields optional except message_data."""
     message_data: Dict[str, Any]  # Required
+    file_data: bytes
     bid_proposal_included: bool
     should_forward: bool
     proposals: list
@@ -326,8 +392,11 @@ async def analyze_attachment_node(state: EmailProcessingState) -> EmailProcessin
             # Collect bytes from iterator
             file_data = b''.join(attachment_bytes_iter)
 
+            # Get dynamically loaded enabled projects from database
+            enabled_projects = get_enabled_projects()
+            
             # Process with Reducto
-            result = extract_from_file(file_data, filename, active_projects=[])
+            result = extract_from_file(file_data, filename, active_projects=enabled_projects)
 
             # Debug: print what Reducto returned
             print(f"[DEBUG] Raw Reducto result for {filename}: {result}")
@@ -338,15 +407,39 @@ async def analyze_attachment_node(state: EmailProcessingState) -> EmailProcessin
                     return field['value']
                 return field
 
+            # Extract values from the Reducto result
+            is_bid_proposal = extract_value(result.get("is_bid_proposal", False))
+            company_name = extract_value(result.get("company_name"))
+            trade = extract_value(result.get("trade"))
+            project_name = extract_value(result.get("project_name"))
+            
+            # Upload to Google Drive if it's a bid proposal
+            drive_upload_result = None
+            if is_bid_proposal and company_name and trade:
+                try:
+                    drive_upload_result = upload_attachment_to_drive(
+                        file_data=file_data,
+                        original_filename=filename,
+                        company_name=company_name,
+                        trade=trade,
+                        project_name=project_name
+                    )
+                    print(f"[INFO] Uploaded to Google Drive: {drive_upload_result}")
+                except Exception as upload_error:
+                    print(f"[ERROR] Failed to upload to Google Drive: {upload_error}")
+                    drive_upload_result = {"success": False, "error": str(upload_error)}
+            
             proposals.append({
                 "filename": filename,
-                "is_bid_proposal": extract_value(result.get("is_bid_proposal", False)),
-                "company_name": extract_value(result.get("company_name")),
-                "trade": extract_value(result.get("trade")),
-                "project_name": extract_value(result.get("project_name")),
+                # Don't include file_data in response as it's binary and can't be JSON serialized
+                "is_bid_proposal": is_bid_proposal,
+                "company_name": company_name,
+                "trade": trade,
+                "project_name": project_name,
                 "from_email": attachment.get('from'),
                 "message_id": msg_id,
-                "status": "analyzed"
+                "status": "analyzed",
+                "drive_upload": drive_upload_result
             })
 
         except Exception as e:
