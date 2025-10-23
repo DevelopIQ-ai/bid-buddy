@@ -4,6 +4,7 @@ import { useAuth } from './providers'
 import { useEffect, useState } from 'react'
 import RootFolderDialog from '@/components/RootFolderDialog'
 import { apiClient } from '@/lib/api-client'
+import Image from 'next/image'
 
 interface Project {
   id: string
@@ -36,7 +37,7 @@ export default function Dashboard() {
 
   const fetchProjects = async () => {
     try {
-      const data = await apiClient.getProjects()
+      const data = await apiClient.getProjects() as Project[]
       setProjects(data || [])
     } catch (error) {
       console.error('Error fetching projects:', error)
@@ -74,7 +75,7 @@ export default function Dashboard() {
 
   const fetchRootFolder = async () => {
     try {
-      const data = await apiClient.getRootFolder()
+      const data = await apiClient.getRootFolder() as { rootFolder: { id: string; name: string } | null; lastSync: string | null }
       setRootFolder(data.rootFolder)
       setLastSync(data.lastSync)
     } catch (error) {
@@ -99,7 +100,7 @@ export default function Dashboard() {
 
     setSyncing(true)
     try {
-      const data = await apiClient.syncDriveFolders()
+      const data = await apiClient.syncDriveFolders() as { added: number; removed: number }
       await fetchProjects()
       await fetchRootFolder()
       
@@ -150,10 +151,12 @@ export default function Dashboard() {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 {user.user_metadata?.avatar_url && (
-                  <img
+                  <Image
                     src={user.user_metadata.avatar_url}
                     alt="Profile"
-                    className="w-8 h-8 rounded-full"
+                    width={32}
+                    height={32}
+                    className="rounded-full"
                   />
                 )}
                 <span className="text-sm font-medium text-black">{user.user_metadata?.full_name || user.email}</span>
@@ -181,10 +184,12 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   {user.user_metadata?.avatar_url && (
-                    <img
+                    <Image
                       src={user.user_metadata.avatar_url}
                       alt="Profile"
-                      className="w-10 h-10 rounded-full"
+                      width={40}
+                      height={40}
+                      className="rounded-full"
                     />
                   )}
                   <div>

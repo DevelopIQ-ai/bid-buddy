@@ -11,7 +11,7 @@ class APIClient {
       throw new Error('No access token available')
     }
 
-    const headers: any = {
+    const headers: Record<string, string> = {
       'Authorization': `Bearer ${session.access_token}`,
       'Content-Type': 'application/json',
     }
@@ -54,14 +54,14 @@ class APIClient {
     return this.request('/api/projects/')
   }
 
-  async createProject(projectData: any) {
+  async createProject(projectData: Record<string, unknown>) {
     return this.request('/api/projects/', {
       method: 'POST',
       body: JSON.stringify(projectData),
     })
   }
 
-  async updateProject(projectId: string, updateData: any) {
+  async updateProject(projectId: string, updateData: Record<string, unknown>) {
     return this.request(`/api/projects/${projectId}`, {
       method: 'PATCH',
       body: JSON.stringify(updateData),

@@ -41,7 +41,7 @@ export default function RootFolderDialog({
     setLoading(true)
     setError(null)
     try {
-      const data = await apiClient.getDriveFolders()
+      const data = await apiClient.getDriveFolders() as { folders: DriveFolder[] }
       setFolders(data.folders || [])
     } catch (error) {
       setError('Failed to load Drive folders. Please check your connection.')
@@ -60,7 +60,7 @@ export default function RootFolderDialog({
     setLoading(true)
     setError(null)
     try {
-      const data = await apiClient.searchDriveFolders(searchQuery)
+      const data = await apiClient.searchDriveFolders(searchQuery) as { folders: DriveFolder[] }
       setFolders(data.folders || [])
     } catch (error) {
       setError('Failed to search folders.')
@@ -76,7 +76,7 @@ export default function RootFolderDialog({
     try {
       onSave(selectedFolder.id, selectedFolder.name)
       onClose()
-    } catch (error) {
+    } catch {
       setError('Failed to save root folder configuration.')
     }
   }
