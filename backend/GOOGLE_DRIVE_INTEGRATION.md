@@ -60,10 +60,10 @@ Syncs all folders from the configured root directory as projects in the database
 - Or `https://www.googleapis.com/auth/drive.readonly` - Read-only access
 
 ## Environment Variables
-```
-GOOGLE_CLIENT_ID=your-client-id
-GOOGLE_CLIENT_SECRET=your-client-secret
-```
+**Note:** Google OAuth credentials are configured in Supabase Dashboard, not in backend `.env`:
+1. Go to Supabase Dashboard → Authentication → Providers → Google
+2. Enter your Google Client ID and Client Secret there
+3. Supabase handles the OAuth flow and provides tokens to your app
 
 ## Testing
 1. Sign in with Google OAuth

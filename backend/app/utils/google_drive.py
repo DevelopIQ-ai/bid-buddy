@@ -50,9 +50,34 @@ def get_google_token(user_id: str) -> Optional[str]:
         return None
 
 
-def get_drive_service(access_token: str):
-    """Build Google Drive service with access token"""
-    credentials = Credentials(token=access_token)
+def get_drive_service(access_token: str, refresh_token: Optional[str] = None):
+    """
+    Build Google Drive service with credentials that support auto-refresh.
+
+    Args:
+        access_token: Google OAuth access token
+        refresh_token: Google OAuth refresh token (optional, but required for auto-refresh)
+
+    Returns:
+        Google Drive service instance
+    """
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+
+    # If we have refresh token and client credentials, create full OAuth credentials
+    if refresh_token and client_id and client_secret:
+        credentials = Credentials(
+            token=access_token,
+            refresh_token=refresh_token,
+            token_uri='https://oauth2.googleapis.com/token',
+            client_id=client_id,
+            client_secret=client_secret
+        )
+    else:
+        # Fallback: credentials without refresh (will fail when token expires)
+        logger.warning("Creating credentials without refresh token - uploads will fail when token expires")
+        credentials = Credentials(token=access_token)
+
     service = build('drive', 'v3', credentials=credentials)
     return service
 
@@ -127,35 +152,61 @@ def upload_attachment_to_drive(
     trade: str,
     project_name: str,
     access_token: Optional[str] = None,
+    refresh_token: Optional[str] = None,
     drive_root_folder_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Upload an attachment to Google Drive with proper naming and folder structure.
-    
+
     Args:
         file_data: The raw file bytes to upload
         original_filename: The original filename (for extension extraction)
         company_name: The company name extracted from the document
         trade: The trade/work type extracted from the document
         project_name: The project name the document belongs to
-        access_token: Google OAuth access token. If not provided, will get from first user
+        access_token: Google OAuth access token. If not provided, will fetch from database
+        refresh_token: Google OAuth refresh token. If not provided, will fetch from database
         drive_root_folder_id: Root folder ID in Google Drive. If not provided, will get from database
-    
+
     Returns:
         Dict containing the Google Drive file ID and web link
     """
     try:
-        # Use evan@developiq.ai's credentials for testing
-        # TODO: Fix database connection to fetch these dynamically based on current user
-        if not access_token:
-            access_token = "ya29.a0ATi6K2vFMbX1mc191ETIFGHZt8ekp76SrzxmiP4LXA038cAUWhijHHKtJOL6z4KAXAoBSP4h_V5n-tLt6cvm2-JySZIGbIX8f7LUR7KoGqJmyTE1-bcn0bovr467d_Qhc8DSNe91ZksCEJepTzxIj5i5RBIeR_i1o3__XpKSbI57bVoNXfUu3vN1OSiNWfBB1d0mtFsaCgYKASUSARASFQHGX2Mi9ypcKMa7fmbiFYWGf1DSPw0206"
-        if not drive_root_folder_id:
-            drive_root_folder_id = "1juOf2zIHpUv1PLQIqXv6HiFydX68oGOU"  # 01. Jobs in Bid Process folder
-        
+        # Get tokens and Drive folder from database if not provided
+        if not access_token or not drive_root_folder_id:
+            PRIMARY_USER_EMAIL = os.getenv("PRIMARY_USER_EMAIL")
+            if not PRIMARY_USER_EMAIL:
+                raise ValueError("PRIMARY_USER_EMAIL not configured in environment")
+
+            supabase = get_supabase_service_client()
+
+            # Get user's profile with tokens and Drive folder
+            response = supabase.table('profiles').select(
+                'google_access_token, google_refresh_token, drive_root_folder_id'
+            ).eq('email', PRIMARY_USER_EMAIL).execute()
+
+            if not response.data:
+                raise RuntimeError(f"No profile found for {PRIMARY_USER_EMAIL}")
+
+            profile = response.data[0]
+
+            if not access_token:
+                access_token = profile.get('google_access_token')
+            if not refresh_token:
+                refresh_token = profile.get('google_refresh_token')
+            if not drive_root_folder_id:
+                drive_root_folder_id = profile.get('drive_root_folder_id')
+
+            if not access_token:
+                raise RuntimeError(f"No Google access token found for {PRIMARY_USER_EMAIL}. Please sign in to the dashboard to connect Google Drive.")
+
+            if not drive_root_folder_id:
+                raise RuntimeError(f"No Drive root folder configured for {PRIMARY_USER_EMAIL}. Please configure it in the dashboard.")
+
         logger.info(f"Using Google Drive root folder: {drive_root_folder_id}")
-        
-        # Get Drive service
-        service = get_drive_service(access_token)
+
+        # Get Drive service with refresh capability
+        service = get_drive_service(access_token, refresh_token)
         
         # Extract file extension from original filename
         _, extension = os.path.splitext(original_filename)

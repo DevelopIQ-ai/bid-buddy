@@ -49,10 +49,15 @@ export default function Dashboard() {
     const project = projects.find(p => p.id === id)
     if (!project) return
 
+    // Prevent disabling "Uncertain Bids" folder
+    if (project.name === 'Uncertain Bids') {
+      return
+    }
+
     const newEnabled = !project.enabled
-    
+
     // Optimistic update
-    setProjects(prev => prev.map(p => 
+    setProjects(prev => prev.map(p =>
       p.id === id ? { ...p, enabled: newEnabled } : p
     ))
 
@@ -61,7 +66,7 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Error updating project:', error)
       // Revert optimistic update on error
-      setProjects(prev => prev.map(p => 
+      setProjects(prev => prev.map(p =>
         p.id === id ? { ...p, enabled: !newEnabled } : p
       ))
     }
@@ -285,16 +290,25 @@ export default function Dashboard() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <button
-                            onClick={() => toggleProject(project.id)}
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                              project.enabled
-                                ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                : 'bg-red-100 text-red-800 hover:bg-red-200'
-                            }`}
-                          >
-                            {project.enabled ? 'Enabled' : 'Disabled'}
-                          </button>
+                          {project.name === 'Uncertain Bids' ? (
+                            <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 cursor-not-allowed opacity-75" title="This folder is always enabled and cannot be disabled">
+                              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                              </svg>
+                              Always Enabled
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => toggleProject(project.id)}
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                                project.enabled
+                                  ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                  : 'bg-red-100 text-red-800 hover:bg-red-200'
+                              }`}
+                            >
+                              {project.enabled ? 'Enabled' : 'Disabled'}
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))

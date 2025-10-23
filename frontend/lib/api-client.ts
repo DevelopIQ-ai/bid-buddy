@@ -6,21 +6,26 @@ class APIClient {
   private getAuthHeaders = async (includeGoogleToken = false) => {
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
-    
+
     if (!session?.access_token) {
       throw new Error('No access token available')
     }
-    
+
     const headers: any = {
       'Authorization': `Bearer ${session.access_token}`,
       'Content-Type': 'application/json',
     }
-    
-    // Include Google token if requested and available
+
+    // Include Google tokens if requested and available
     if (includeGoogleToken && session.provider_token) {
       headers['x-google-token'] = session.provider_token
+
+      // Also include refresh token if available (required for auto-refresh capability)
+      if (session.provider_refresh_token) {
+        headers['x-google-refresh-token'] = session.provider_refresh_token
+      }
     }
-    
+
     return headers
   }
 

@@ -18,62 +18,49 @@ logger = logging.getLogger(__name__)
 
 def get_enabled_projects() -> List[str]:
     """
-    Fetch all enabled projects from the database.
-    Since we're processing emails that could be for any user, we need to get ALL enabled projects.
-    
+    Fetch all enabled projects from the database for the primary user.
+
     Returns:
-        List of project names that are enabled across all users
+        List of project names that are enabled
+
+    Raises:
+        ValueError: If PRIMARY_USER_EMAIL is not configured
+        RuntimeError: If unable to fetch projects from database
     """
+    from app.utils.google_drive import get_supabase_service_client
+
+    PRIMARY_USER_EMAIL = os.getenv("PRIMARY_USER_EMAIL")
+
+    if not PRIMARY_USER_EMAIL:
+        raise ValueError("PRIMARY_USER_EMAIL must be set in environment - this is the email of the account that owns the Google Drive")
+
     try:
-        # Get Supabase client 
-        SUPABASE_URL = os.getenv("SUPABASE_URL")
-        SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-        
-        if not SUPABASE_SERVICE_KEY:
-            # Try to get projects for a specific user if we know who (evan@developiq.ai for now)
-            # In production, this should be passed from the webhook context
-            SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
-            
-            if not SUPABASE_URL or not SUPABASE_ANON_KEY:
-                logger.warning("Supabase credentials not configured, using default projects")
-                return ["7Brew-Canton TX", "7Brew-Snyder TX", "CCH Church Project- Dallas", 
-                       "Concrete Self Performance", "O'Reilly Prototype Budget Bid", 
-                       "Popeyes- Glen Heights", "PX-San Antonio (Bulverde)", "Yogurtland- Flower Mound"]
-            
-            # Use anon key with a hardcoded user ID for evan@developiq.ai
-            # This is a temporary workaround until we have service role key
-            supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
-            
-            # Use evan@developiq.ai's user ID directly (from previous debugging)
-            evan_user_id = "4191330b-1c80-4605-854c-09b20c760a81"
-            
-            # Query enabled projects for this specific user
-            response = supabase.table('projects').select('name').eq('enabled', True).eq('user_id', evan_user_id).execute()
-        else:
-            # With service role key, we can bypass RLS and get all projects
-            supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-            
-            # Query ALL enabled projects across all users
-            response = supabase.table('projects').select('name').eq('enabled', True).execute()
-        
-        if response.data:
-            project_names = [project['name'] for project in response.data]
-            logger.info(f"Loaded {len(project_names)} enabled projects from database")
-            return project_names if project_names else ["7Brew-Canton TX", "7Brew-Snyder TX", "CCH Church Project- Dallas", 
-                   "Concrete Self Performance", "O'Reilly Prototype Budget Bid", 
-                   "Popeyes- Glen Heights", "PX-San Antonio (Bulverde)", "Yogurtland- Flower Mound"]
-        else:
-            logger.warning("No enabled projects found in database, using default list")
-            return ["7Brew-Canton TX", "7Brew-Snyder TX", "CCH Church Project- Dallas", 
-                   "Concrete Self Performance", "O'Reilly Prototype Budget Bid", 
-                   "Popeyes- Glen Heights", "PX-San Antonio (Bulverde)", "Yogurtland- Flower Mound"]
-            
+        # Use service role client to bypass RLS policies
+        supabase = get_supabase_service_client()
+
+        # First get the user ID from email via profiles table
+        profile_response = supabase.table('profiles').select('id').eq('email', PRIMARY_USER_EMAIL).execute()
+
+        if not profile_response.data:
+            raise RuntimeError(f"No user found with email {PRIMARY_USER_EMAIL}. Please ensure the user has signed in at least once.")
+
+        user_id = profile_response.data[0]['id']
+        logger.info(f"Found user_id: {user_id} for email: {PRIMARY_USER_EMAIL}")
+
+        # Query enabled projects for the primary user
+        response = supabase.table('projects').select('name').eq('enabled', True).eq('user_id', user_id).execute()
+        logger.info(f"Projects query returned {len(response.data) if response.data else 0} results")
+
+        if not response.data:
+            raise RuntimeError(f"No enabled projects found for user {PRIMARY_USER_EMAIL}. Please enable at least one project in the dashboard.")
+
+        project_names = [project['name'] for project in response.data]
+        logger.info(f"Loaded {len(project_names)} enabled projects from database for {PRIMARY_USER_EMAIL}")
+        return project_names
+
     except Exception as e:
         logger.error(f"Error fetching enabled projects: {e}")
-        # Return default list on error
-        return ["7Brew-Canton TX", "7Brew-Snyder TX", "CCH Church Project- Dallas", 
-               "Concrete Self Performance", "O'Reilly Prototype Budget Bid", 
-               "Popeyes- Glen Heights", "PX-San Antonio (Bulverde)", "Yogurtland- Flower Mound"]
+        raise RuntimeError(f"Failed to fetch enabled projects from database: {str(e)}")
 
 
 # Define the state schema for the email processing workflow

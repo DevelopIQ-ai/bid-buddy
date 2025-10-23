@@ -37,6 +37,23 @@ async def toggle_project(
     try:
         supabase = get_supabase_client(user.get('access_token'))
 
+        # First, check if this is the "Uncertain Bids" folder
+        project_response = supabase.table('projects').select('name').eq(
+            'id', project_id
+        ).eq('user_id', user['id']).execute()
+
+        if not project_response.data:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        project_name = project_response.data[0]['name']
+
+        # Prevent disabling "Uncertain Bids" folder
+        if project_name == "Uncertain Bids" and not toggle_data.enabled:
+            raise HTTPException(
+                status_code=400,
+                detail="The 'Uncertain Bids' folder cannot be disabled as it's required for unmatched bid proposals"
+            )
+
         response = supabase.table('projects').update({
             'enabled': toggle_data.enabled
         }).eq('id', project_id).eq('user_id', user['id']).execute()
@@ -46,6 +63,8 @@ async def toggle_project(
         else:
             raise HTTPException(status_code=404, detail="Project not found")
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error toggling project: {e}")
         raise HTTPException(status_code=500, detail="Failed to toggle project")

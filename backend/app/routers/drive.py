@@ -100,8 +100,9 @@ async def sync_drive_folders(
 
         root_folder_id = profile['drive_root_folder_id']
 
-        # Get Google access token
+        # Get Google access token and refresh token
         google_token_header = request.headers.get("x-google-token")
+        google_refresh_token_header = request.headers.get("x-google-refresh-token")
 
         if not google_token_header:
             google_token = await get_google_token(user['id'])
@@ -116,10 +117,16 @@ async def sync_drive_folders(
         else:
             google_token = google_token_header
 
-            # Store the Google token for future use
-            supabase.table('profiles').update({
+            # Store both the access token and refresh token for future use
+            update_data = {
                 'google_access_token': google_token
-            }).eq('id', user['id']).execute()
+            }
+
+            # Only store refresh token if provided (it's optional but highly recommended)
+            if google_refresh_token_header:
+                update_data['google_refresh_token'] = google_refresh_token_header
+
+            supabase.table('profiles').update(update_data).eq('id', user['id']).execute()
 
         # Build Drive service
         service = get_drive_service(google_token)
@@ -179,16 +186,27 @@ async def sync_drive_folders(
             modified_time = folder.get('modifiedTime')
             drive_folder_ids.add(folder_id)
 
+            # "Uncertain Bids" folder should always be enabled
+            is_uncertain_bids = folder_name == "Uncertain Bids"
+
             if folder_id in existing_map:
-                # Update if name changed
+                # Update if name changed or if it's Uncertain Bids and not enabled
+                update_data = {}
                 if existing_map[folder_id]['name'] != folder_name:
-                    supabase.table('projects').update({
-                        'name': folder_name,
-                        'last_modified_time': modified_time
-                    }).eq('id', existing_map[folder_id]['id']).execute()
+                    update_data['name'] = folder_name
+                    update_data['last_modified_time'] = modified_time
+
+                # Ensure "Uncertain Bids" is always enabled
+                if is_uncertain_bids and not existing_map[folder_id].get('enabled'):
+                    update_data['enabled'] = True
+
+                if update_data:
+                    supabase.table('projects').update(update_data).eq(
+                        'id', existing_map[folder_id]['id']
+                    ).execute()
                     updated += 1
             else:
-                # Add new project
+                # Add new project - enable "Uncertain Bids" by default
                 supabase.table('projects').insert({
                     'user_id': user['id'],
                     'name': folder_name,
@@ -196,7 +214,7 @@ async def sync_drive_folders(
                     'drive_folder_name': folder_name,
                     'is_drive_folder': True,
                     'last_modified_time': modified_time,
-                    'enabled': False
+                    'enabled': is_uncertain_bids  # Enable if it's "Uncertain Bids"
                 }).execute()
                 added += 1
 
