@@ -326,8 +326,8 @@ def main():
     print("=" * 80)
 
     try:
-        # Test 1 email
-        results = test_multiple_emails(count=1)
+        # Test 5 emails
+        results = test_multiple_emails(count=5)
 
         # Final Summary
         print("=" * 80)

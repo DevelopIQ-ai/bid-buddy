@@ -105,7 +105,7 @@ async def sync_drive_folders(
         google_refresh_token_header = request.headers.get("x-google-refresh-token")
 
         if not google_token_header:
-            google_token = await get_google_token(user['id'])
+            google_token = get_google_token(user['id'])
             if not google_token:
                 return {
                     "success": False,
@@ -144,7 +144,9 @@ async def sync_drive_folders(
                     fields='nextPageToken, files(id, name, modifiedTime)',
                     pageSize=100,
                     pageToken=page_token,
-                    orderBy='name'
+                    orderBy='name',
+                    supportsAllDrives=True,
+                    includeItemsFromAllDrives=True
                 ).execute()
 
                 folders = results.get('files', [])
@@ -262,7 +264,7 @@ async def list_folders(
 
         if not google_token_header:
             # Try to get from database
-            google_token = await get_google_token(user['id'])
+            google_token = get_google_token(user['id'])
             if not google_token:
                 logger.warning("No Google token available, returning empty list")
                 return {"folders": [], "message": "Please reconnect Google Drive"}
@@ -284,7 +286,9 @@ async def list_folders(
                 fields='nextPageToken, files(id, name, modifiedTime, parents)',
                 pageSize=100,
                 pageToken=page_token,
-                orderBy='name'
+                orderBy='name',
+                supportsAllDrives=True,
+                includeItemsFromAllDrives=True
             ).execute()
         except HttpError as e:
             logger.error(f"Google API error in list_folders: {e}")
@@ -326,7 +330,7 @@ async def search_folders(
         google_token_header = request.headers.get("x-google-token")
 
         if not google_token_header:
-            google_token = await get_google_token(user['id'])
+            google_token = get_google_token(user['id'])
             if not google_token:
                 return {"folders": [], "message": "Please reconnect Google Drive"}
         else:
@@ -344,7 +348,9 @@ async def search_folders(
                 q=search_query,
                 fields='files(id, name, modifiedTime, parents)',
                 pageSize=50,
-                orderBy='name'
+                orderBy='name',
+                supportsAllDrives=True,
+                includeItemsFromAllDrives=True
             ).execute()
         except HttpError as e:
             logger.error(f"Google API error in search_folders: {e}")

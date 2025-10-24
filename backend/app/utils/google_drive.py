@@ -99,9 +99,10 @@ def find_best_matching_folder(service, parent_folder_id: str, project_name: str)
         query = f"'{parent_folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
         results = service.files().list(
             q=query,
-            spaces='drive',
             fields='files(id, name)',
-            pageSize=100
+            pageSize=100,
+            supportsAllDrives=True,
+            includeItemsFromAllDrives=True
         ).execute()
         
         folders = results.get('files', [])
@@ -237,8 +238,9 @@ def upload_attachment_to_drive(
                 query = f"'{drive_root_folder_id}' in parents and name='Uncertain Bids' and mimeType='application/vnd.google-apps.folder' and trashed=false"
                 results = service.files().list(
                     q=query,
-                    spaces='drive',
-                    fields='files(id, name)'
+                    fields='files(id, name)',
+                    supportsAllDrives=True,
+                    includeItemsFromAllDrives=True
                 ).execute()
                 
                 uncertain_folders = results.get('files', [])
@@ -257,7 +259,8 @@ def upload_attachment_to_drive(
                     }
                     folder = service.files().create(
                         body=folder_metadata,
-                        fields='id, name'
+                        fields='id, name',
+                        supportsAllDrives=True
                     ).execute()
                     folder_id = folder.get('id')
                     matched_folder = {'id': folder_id, 'name': 'Uncertain Bids'}
@@ -270,8 +273,9 @@ def upload_attachment_to_drive(
             query = f"'{drive_root_folder_id}' in parents and name='Uncertain Bids' and mimeType='application/vnd.google-apps.folder' and trashed=false"
             results = service.files().list(
                 q=query,
-                spaces='drive',
-                fields='files(id, name)'
+                fields='files(id, name)',
+                supportsAllDrives=True,
+                includeItemsFromAllDrives=True
             ).execute()
             
             uncertain_folders = results.get('files', [])
@@ -288,7 +292,8 @@ def upload_attachment_to_drive(
                 }
                 folder = service.files().create(
                     body=folder_metadata,
-                    fields='id, name'
+                    fields='id, name',
+                    supportsAllDrives=True
                 ).execute()
                 folder_id = folder.get('id')
                 matched_folder = {'id': folder_id, 'name': 'Uncertain Bids'}
@@ -315,7 +320,8 @@ def upload_attachment_to_drive(
         file = service.files().create(
             body=file_metadata,
             media_body=media,
-            fields='id, name, webViewLink, webContentLink'
+            fields='id, name, webViewLink, webContentLink',
+            supportsAllDrives=True
         ).execute()
         
         logger.info(f"Successfully uploaded file to Google Drive: {new_filename} in folder: {matched_folder['name'] if matched_folder else 'Unknown'}")

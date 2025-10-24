@@ -1,0 +1,249 @@
+
+================================================================================
+TEST: Process 5 Emails Through Webhook
+================================================================================
+
+================================================================================
+TESTING 5 EMAILS FROM AGENTMAIL
+================================================================================
+
+Fetching messages from inbox...
+Found 5 messages to test
+
+================================================================================
+EMAIL #1 OF 5
+================================================================================
+From: Richard Van Brunt <richard@vanbruntco.com>
+Subject: Re: Yogurtland - Flower Mound, TX - Breakdown Cost of Interior Framing & Drywall
+Attachments: 0
+
+4. Transforming to webhook format...
+   ✓ Payload created
+   Event ID: test_evt_PENBSDR4LWk5RnVhZlhP
+   Message has attachments: False
+
+5. Sending to webhook: http://localhost:8000/webhooks/agentmail
+   Response Status: 200
+   ✓ Webhook processed successfully!
+
+   Response Data:
+{
+    "status": "ok",
+    "action": "bid_proposal",
+    "analysis": {
+        "bid_proposal_included": true,
+        "should_forward": true,
+        "forward_result": null,
+        "attachment_analysis": {
+            "proposals": [
+                {
+                    "filename": "Texas Star D&P - R.1 - Yogurtland - Flower Mound, Tx - Paint proposal.pdf",
+                    "is_bid_proposal": true,
+                    "company_name": "Texas Star Drywall & Painting",
+                    "trade": "Drywall & Painting",
+                    "project_name": "Yogurt Land \u2013 Flower Mond, Tx",
+                    "from_email": "Carlos Sixtos <carlos.s@texasstar-dp.com>",
+                    "message_id": "PENBRDgtd3JWeVc5aU5rOFJ5c2FRNHdGZk1IenFmPTg3LVk2Ny1vYVgybnpTS3lCPUFuUUBtYWlsLmdtYWlsLmNvbT4",
+                    "status": "analyzed"
+                },
+                {
+                    "filename": "Texas Star D&P - #500R.2 - Yogurtland - Flower Mound, Tx - Paint proposal.pdf",
+                    "is_bid_proposal": true,
+                    "company_name": "Texas Star Drywall & Painting",
+                    "trade": "Drywall & Painting",
+                    "project_name": "Yogurt Land - Flower Mound, Tx",
+                    "from_email": "Carlos Sixtos <carlos.s@texasstar-dp.com>",
+                    "message_id": "PENBRDgtd3JXeGk5SC16NVFva1lrVHZCZ294OGljWlNqWnlHQ1UzQThuYnFXQkdkT1ljZ0BtYWlsLmdtYWlsLmNvbT4",
+                    "status": "analyzed"
+                }
+            ],
+            "total_count": 2
+        }
+    }
+}
+
+📊 ASSESSMENT: ❓ UNCLEAR
+   Unexpected state: action=bid_proposal, bid=True, forward=True
+
+   Expected: Unknown
+   Actual: Unexpected workflow result
+
+   📄 Attachments Processed:
+      • Texas Star D&P - R.1 - Yogurtland - Flower Mound, Tx - Paint proposal.pdf
+        Company: Texas Star Drywall & Painting
+        Trade: Drywall & Painting
+        Project: Yogurt Land – Flower Mond, Tx
+        ✗ Drive upload failed
+      • Texas Star D&P - #500R.2 - Yogurtland - Flower Mound, Tx - Paint proposal.pdf
+        Company: Texas Star Drywall & Painting
+        Trade: Drywall & Painting
+        Project: Yogurt Land - Flower Mound, Tx
+        ✗ Drive upload failed
+
+================================================================================
+EMAIL #2 OF 5
+================================================================================
+From: PlanHub <planhubnotifications@planhub.com>
+Subject: Planning/Design Project Report
+Attachments: 0
+
+4. Transforming to webhook format...
+   ✓ Payload created
+   Event ID: test_evt_PDAwRFgzQ1hQUnlpZDJl
+   Message has attachments: False
+
+5. Sending to webhook: http://localhost:8000/webhooks/agentmail
+   Response Status: 200
+   ✓ Webhook processed successfully!
+
+   Response Data:
+{
+    "status": "ok",
+    "action": "skipped",
+    "analysis": {
+        "bid_proposal_included": false,
+        "should_forward": false,
+        "forward_result": null,
+        "attachment_analysis": null
+    }
+}
+
+📊 ASSESSMENT: ✅ PASS
+   Email correctly identified as non-actionable (skipped)
+
+   Expected: Skip non-actionable emails
+   Actual: Email skipped (no bid, no forward needed)
+
+================================================================================
+EMAIL #3 OF 5
+================================================================================
+From: James Milligan (MedPlumb LLC) <team@buildingconnected.com>
+Subject: Proposal Submitted - Yogurtland-McKinney
+Attachments: 0
+
+4. Transforming to webhook format...
+   ✓ Payload created
+   Event ID: test_evt_PDE1OWYxNTRlLTRlYzQt
+   Message has attachments: False
+
+5. Sending to webhook: http://localhost:8000/webhooks/agentmail
+   Response Status: 200
+   ✓ Webhook processed successfully!
+
+   Response Data:
+{
+    "status": "ok",
+    "action": "skipped",
+    "analysis": {
+        "bid_proposal_included": false,
+        "should_forward": false,
+        "forward_result": null,
+        "attachment_analysis": null
+    }
+}
+
+📊 ASSESSMENT: ✅ PASS
+   Email correctly identified as non-actionable (skipped)
+
+   Expected: Skip non-actionable emails
+   Actual: Email skipped (no bid, no forward needed)
+
+================================================================================
+EMAIL #4 OF 5
+================================================================================
+From: Lynell Ellison (Ellison Construction Cleaning Services Inc.) <team@buildingconnected.com>
+Subject: Proposal Submitted - Yogurtland-McKinney
+Attachments: 0
+
+4. Transforming to webhook format...
+   ✓ Payload created
+   Event ID: test_evt_PDY1ZDBkNzgzLTRjNWQt
+   Message has attachments: False
+
+5. Sending to webhook: http://localhost:8000/webhooks/agentmail
+   Response Status: 200
+   ✓ Webhook processed successfully!
+
+   Response Data:
+{
+    "status": "ok",
+    "action": "skipped",
+    "analysis": {
+        "bid_proposal_included": false,
+        "should_forward": false,
+        "forward_result": null,
+        "attachment_analysis": null
+    }
+}
+
+📊 ASSESSMENT: ✅ PASS
+   Email correctly identified as non-actionable (skipped)
+
+   Expected: Skip non-actionable emails
+   Actual: Email skipped (no bid, no forward needed)
+
+================================================================================
+EMAIL #5 OF 5
+================================================================================
+From: John Hildreth (Complete Fire Protection Inc.) <team@buildingconnected.com>
+Subject: Proposal Submitted - Yogurtland-McKinney
+Attachments: 0
+
+4. Transforming to webhook format...
+   ✓ Payload created
+   Event ID: test_evt_PDE4ZTM0YWFmLWEyMDYt
+   Message has attachments: False
+
+5. Sending to webhook: http://localhost:8000/webhooks/agentmail
+   Response Status: 200
+   ✓ Webhook processed successfully!
+
+   Response Data:
+{
+    "status": "ok",
+    "action": "skipped",
+    "analysis": {
+        "bid_proposal_included": false,
+        "should_forward": false,
+        "forward_result": null,
+        "attachment_analysis": null
+    }
+}
+
+📊 ASSESSMENT: ✅ PASS
+   Email correctly identified as non-actionable (skipped)
+
+   Expected: Skip non-actionable emails
+   Actual: Email skipped (no bid, no forward needed)
+
+================================================================================
+FINAL TEST REPORT
+================================================================================
+
+Results Summary:
+  ✅ Pass: 4/5
+  ❌ Fail: 0/5
+  ⚠️  Partial/Review: 0/5
+
+
+Detailed Results:
+
+1. ❓ UNCLEAR - Re: Yogurtland - Flower Mound, TX - Breakdown Cost of Interi
+   From: Richard Van Brunt <richard@vanbruntco.com>
+   Unexpected state: action=bid_proposal, bid=True, forward=True
+
+2. ✅ PASS - Planning/Design Project Report
+   From: PlanHub <planhubnotifications@planhub.com>
+   Email correctly identified as non-actionable (skipped)
+
+3. ✅ PASS - Proposal Submitted - Yogurtland-McKinney
+   From: James Milligan (MedPlumb LLC) <team@buildingconnected.com>
+   Email correctly identified as non-actionable (skipped)
+
+4. ✅ PASS - Proposal Submitted - Yogurtland-McKinney
+   From: Lynell Ellison (Ellison Construction Cleaning Services Inc.) <team@buildingconnected.com>
+   Email correctly identified as non-actionable (skipped)
+
+5. ✅ PASS - Proposal Submitted - Yogurtland-McKinney
+   From: John Hildreth (Complete Fire Protection Inc.) <team@buildingconnected.com>
+   Email correctly identified as non-actionable (skipped)
