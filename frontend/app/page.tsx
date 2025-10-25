@@ -1,10 +1,13 @@
 'use client'
 
 import { useAuth } from './providers'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Fragment } from 'react'
+import { useRouter } from 'next/navigation'
 import RootFolderDialog from '@/components/RootFolderDialog'
 import { apiClient } from '@/lib/api-client'
 import Image from 'next/image'
+import Toggle from '@/components/Toggle'
+import { Menu, Transition } from '@headlessui/react'
 
 interface Project {
   id: string
@@ -21,6 +24,7 @@ interface RootFolder {
 
 export default function Dashboard() {
   const { user, loading, signInWithGoogle, signOut } = useAuth()
+  const router = useRouter()
   const [projects, setProjects] = useState<Project[]>([])
   const [loadingProjects, setLoadingProjects] = useState(true)
   const [rootFolder, setRootFolder] = useState<RootFolder | null>(null)
@@ -149,122 +153,124 @@ export default function Dashboard() {
           <div className="flex justify-between items-center h-16">
             <h1 className="text-xl font-semibold text-black">Bid Buddy</h1>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                {user.user_metadata?.avatar_url && (
-                  <Image
-                    src={user.user_metadata.avatar_url}
-                    alt="Profile"
-                    width={32}
-                    height={32}
-                    className="rounded-full"
-                  />
-                )}
-                <span className="text-sm font-medium text-black">{user.user_metadata?.full_name || user.email}</span>
-              </div>
-              <button
-                onClick={signOut}
-                className="text-gray-500 hover:text-gray-700 text-sm"
-              >
-                Sign out
-              </button>
+              {/* User Dropdown */}
+              <Menu as="div" className="relative inline-block text-left">
+                <Menu.Button className="flex items-center space-x-2">
+                  {user.user_metadata?.avatar_url && (
+                    <Image
+                      src={user.user_metadata.avatar_url}
+                      alt="Profile"
+                      width={32}
+                      height={32}
+                      className="rounded-full"
+                    />
+                  )}
+                  <span className="text-sm font-medium text-gray-700">{user.user_metadata?.full_name || user.email}</span>
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </Menu.Button>
+
+                <Transition
+                  as={Fragment}
+                  enter="transition ease-out duration-100"
+                  enterFrom="transform opacity-0 scale-95"
+                  enterTo="transform opacity-100 scale-100"
+                  leave="transition ease-in duration-75"
+                  leaveFrom="transform opacity-100 scale-100"
+                  leaveTo="transform opacity-0 scale-95"
+                >
+                  <Menu.Items className="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                    <div className="p-1">
+                      <div className="px-3 py-2 border-b">
+                        <p className="text-sm font-medium text-gray-900">{user.user_metadata?.full_name || 'User'}</p>
+                        <p className="text-xs text-gray-500">{user.email}</p>
+                        {user.app_metadata?.provider === 'google' && (
+                          <span className="inline-flex items-center mt-2 text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full">
+                            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            Google Connected
+                          </span>
+                        )}
+                      </div>
+                      <Menu.Item>
+                        {({ active }) => (
+                          <button
+                            onClick={signOut}
+                            className={`${
+                              active ? 'bg-gray-100' : ''
+                            } flex w-full px-3 py-2 text-sm text-gray-700`}
+                          >
+                            Sign out
+                          </button>
+                        )}
+                      </Menu.Item>
+                    </div>
+                  </Menu.Items>
+                </Transition>
+              </Menu>
             </div>
           </div>
         </div>
       </nav>
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0 space-y-6">
-          
+        <div className="px-4 py-6 sm:px-0">
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-black">Google Drive Integration</h2>
-              <p className="text-sm text-gray-600">Configure your Google Drive root directory for project syncing</p>
-            </div>
-            <div className="px-6 py-4 space-y-4">
               <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-medium text-black">Projects</h2>
+                </div>
                 <div className="flex items-center space-x-3">
-                  {user.user_metadata?.avatar_url && (
-                    <Image
-                      src={user.user_metadata.avatar_url}
-                      alt="Profile"
-                      width={40}
-                      height={40}
-                      className="rounded-full"
-                    />
-                  )}
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{user.user_metadata?.full_name || 'User'}</p>
-                    <p className="text-sm text-gray-500">{user.email}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  {user.app_metadata?.provider === 'google' ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      Google Drive Connected
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => signInWithGoogle()}
-                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                    >
-                      Connect Google Drive
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Root Folder Configuration */}
-              <div className="border-t pt-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-900">Root Directory</h3>
+                  {/* Root Folder Info */}
+                  <div className="text-right">
                     {rootFolder ? (
-                      <p className="text-sm text-gray-600">📁 {rootFolder.name}</p>
+                      <>
+                        <p className="text-sm font-medium text-gray-700">Root: {rootFolder.name}</p>
+                        {lastSync && (
+                          <p className="text-xs text-gray-500">
+                            Last sync: {new Date(lastSync).toLocaleTimeString()}
+                          </p>
+                        )}
+                      </>
                     ) : (
-                      <p className="text-sm text-gray-500">No root directory configured</p>
-                    )}
-                    {lastSync && (
-                      <p className="text-xs text-gray-400">
-                        Last synced: {new Date(lastSync).toLocaleString()}
-                      </p>
+                      <p className="text-sm text-gray-500">No root folder configured</p>
                     )}
                   </div>
+                  
+                  {/* Action Buttons */}
                   <div className="flex space-x-2">
                     <button
                       onClick={() => setShowRootFolderDialog(true)}
-                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                     >
-                      {rootFolder ? 'Change' : 'Configure'}
+                      {rootFolder ? '📁 Change Folder' : '📁 Configure Folder'}
                     </button>
                     {rootFolder && (
                       <button
                         onClick={handleSync}
                         disabled={syncing}
-                        className="px-3 py-1 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                        className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
                       >
-                        {syncing ? 'Syncing...' : 'Sync Now'}
+                        {syncing ? '🔄 Syncing...' : '🔄 Sync'}
                       </button>
                     )}
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-black">Projects</h2>
-            </div>
             
             <div className="overflow-hidden">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 tracking-wider">
                       Project Name
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 tracking-wider">
+                      Enabled
                     </th>
                   </tr>
                 </thead>
@@ -285,35 +291,46 @@ export default function Dashboard() {
                     projects.map((project) => (
                       <tr key={project.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          <div className="flex items-center space-x-2">
-                            {project.is_drive_folder && (
-                              <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
-                              </svg>
-                            )}
-                            <span>{project.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {project.name === 'Uncertain Bids' ? (
-                            <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 cursor-not-allowed opacity-75" title="This folder is always enabled and cannot be disabled">
-                              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                              </svg>
-                              Always Enabled
+                          {project.enabled && project.name !== 'Uncertain Bids' ? (
+                            <button
+                              onClick={() => router.push(`/projects/${project.id}`)}
+                              className="flex items-center space-x-2 hover:text-blue-600 transition-colors"
+                            >
+                              {project.is_drive_folder && (
+                                <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                                </svg>
+                              )}
+                              <span>{project.name}</span>
+                            </button>
+                          ) : project.name === 'Uncertain Bids' ? (
+                            <div className="flex items-center space-x-2">
+                              {project.is_drive_folder && (
+                                <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                                </svg>
+                              )}
+                              <span>{project.name}</span>
                             </div>
                           ) : (
-                            <button
-                              onClick={() => toggleProject(project.id)}
-                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                                project.enabled
-                                  ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                  : 'bg-red-100 text-red-800 hover:bg-red-200'
-                              }`}
-                            >
-                              {project.enabled ? 'Enabled' : 'Disabled'}
-                            </button>
+                            <div className="flex items-center space-x-2">
+                              {project.is_drive_folder && (
+                                <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                                </svg>
+                              )}
+                              <span className="text-gray-500">{project.name}</span>
+                            </div>
                           )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex justify-end">
+                            <Toggle
+                              enabled={project.enabled}
+                              onChange={() => toggleProject(project.id)}
+                              locked={project.name === 'Uncertain Bids'}
+                            />
+                          </div>
                         </td>
                       </tr>
                     ))

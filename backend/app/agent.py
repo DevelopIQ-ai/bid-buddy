@@ -7,6 +7,10 @@ from dotenv import load_dotenv
 from agentmail import AgentMail
 from app.utils.reducto import extract_from_file
 from app.utils.google_drive import upload_attachment_to_drive
+from app.utils.building_connected_email_extractor import (
+    BuildingConnectedEmailExtractor,
+    should_process_buildingconnected
+)
 from langgraph.graph import StateGraph, START, END
 from supabase import create_client, Client
 import logging
@@ -75,6 +79,8 @@ class EmailProcessingState(TypedDict, total=False):
     forward_status: str
     forward_message_id: str
     error: str
+    is_buildingconnected: bool
+    buildingconnected_data: Dict[str, Any]
 
 
 async def llm_json_with_retry(
@@ -127,6 +133,28 @@ async def llm_json_with_retry(
                 raise ValueError(f"JSON parsing failed after {max_retries} attempts: {str(e)}")
 
     raise ValueError("Unexpected error in JSON retry mechanism")
+
+
+async def check_buildingconnected_node(state: EmailProcessingState) -> EmailProcessingState:
+    """
+    LangGraph Node: Check if email is from BuildingConnected
+    
+    Args:
+        state: Current workflow state
+        
+    Returns:
+        Updated state with BuildingConnected flag
+    """
+    message_data = state["message_data"]
+    
+    # Check if it's a BuildingConnected email
+    is_buildingconnected = should_process_buildingconnected(message_data)
+    
+    logger.info(f"BuildingConnected email check: {is_buildingconnected}")
+    
+    return {
+        "is_buildingconnected": is_buildingconnected
+    }
 
 
 async def email_analysis_node(state: EmailProcessingState) -> EmailProcessingState:
@@ -309,6 +337,41 @@ async def forward_email_node(state: EmailProcessingState) -> EmailProcessingStat
             "error": str(e)
         }
 
+async def extract_buildingconnected_data_node(state: EmailProcessingState) -> EmailProcessingState:
+    """
+    LangGraph Node: Extract data from BuildingConnected emails
+    
+    Args:
+        state: Current workflow state
+        
+    Returns:
+        Updated state with extracted BuildingConnected data
+    """
+    message_data = state["message_data"]
+    
+    try:
+        # Extract data from BuildingConnected email
+        extractor = BuildingConnectedEmailExtractor()
+        extracted_data = extractor.process_buildingconnected_email(message_data)
+        
+        logger.info(f"BuildingConnected extraction complete: {extracted_data}")
+        
+        return {
+            "buildingconnected_data": extracted_data,
+            "bid_proposal_included": False  # We're not downloading/processing proposals
+        }
+        
+    except Exception as e:
+        logger.error(f"BuildingConnected extraction failed: {e}")
+        return {
+            "buildingconnected_data": {
+                "success": False,
+                "error": str(e)
+            },
+            "error": f"BuildingConnected extraction failed: {str(e)}"
+        }
+
+
 async def analyze_attachment_node(state: EmailProcessingState) -> EmailProcessingState:
     """
     LangGraph Node: Download and analyze PDF/DOCX attachments with Reducto.
@@ -443,6 +506,15 @@ async def analyze_attachment_node(state: EmailProcessingState) -> EmailProcessin
         "total_count": len(proposals)
     }
 
+def route_after_buildingconnected_check(state: EmailProcessingState) -> str:
+    """Route based on BuildingConnected check."""
+    # If it's BuildingConnected, extract data and end
+    if state.get("is_buildingconnected"):
+        return "extract_buildingconnected"
+    # Otherwise, continue with normal analysis
+    return "email_analysis"
+
+
 def route_after_analysis(state: EmailProcessingState) -> str:
     """Route based on email analysis: forward, analyze, or end."""
     # If bid proposal included, analyze attachments
@@ -457,10 +529,26 @@ def route_after_analysis(state: EmailProcessingState) -> str:
 
 # Build the LangGraph workflow
 workflow = StateGraph(EmailProcessingState)
+workflow.add_node("check_buildingconnected", check_buildingconnected_node)
 workflow.add_node("email_analysis", email_analysis_node)
 workflow.add_node("analyze_attachment", analyze_attachment_node)
 workflow.add_node("forward_email", forward_email_node)
-workflow.add_edge(START, "email_analysis")
+workflow.add_node("extract_buildingconnected", extract_buildingconnected_data_node)
+
+# Start with BuildingConnected check
+workflow.add_edge(START, "check_buildingconnected")
+
+# Route based on BuildingConnected check
+workflow.add_conditional_edges(
+    "check_buildingconnected",
+    route_after_buildingconnected_check,
+    {
+        "email_analysis": "email_analysis",
+        "extract_buildingconnected": "extract_buildingconnected",
+    }
+)
+
+# Route after normal email analysis
 workflow.add_conditional_edges(
     "email_analysis",
     route_after_analysis,
@@ -470,8 +558,12 @@ workflow.add_conditional_edges(
         END: END
     }
 )
+
+# End nodes
 workflow.add_edge("forward_email", END)
 workflow.add_edge("analyze_attachment", END)
+workflow.add_edge("extract_buildingconnected", END)
+
 email_workflow = workflow.compile()
 
 
