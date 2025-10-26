@@ -171,6 +171,19 @@ class APIClient {
     return this.request(`/api/projects/${projectId}/stats`)
   }
 
+  async syncProjectDrive(projectId: string) {
+    return this.request(`/api/projects/${projectId}/sync-drive`, {
+      method: 'POST',
+      includeGoogleToken: true
+    })
+  }
+
+  async syncBuildingConnected(projectId: string) {
+    return this.request(`/api/projects/${projectId}/sync-buildingconnected`, {
+      method: 'POST'
+    })
+  }
+
   // Auth endpoints
   async getCurrentUser() {
     return this.request('/api/auth/user')

@@ -30,14 +30,8 @@ export default function ProjectDetail() {
   const [project, setProject] = useState<Project | null>(null)
   const [bidderStats, setBidderStats] = useState<BidderStat[]>([])
   const [loading, setLoading] = useState(true)
+  const [syncing, setSyncing] = useState(false)
   const [showTradesFlyout, setShowTradesFlyout] = useState(false)
-
-  useEffect(() => {
-    if (user && params.id) {
-      fetchProject()
-      fetchBidderStats()
-    }
-  }, [user, params.id])
 
   const fetchBidderStats = async () => {
     try {
@@ -47,6 +41,75 @@ export default function ProjectDetail() {
       console.error('Error fetching bidder stats:', error)
     }
   }
+
+  const handleAutoSync = async () => {
+    if (!project?.drive_folder_id) return
+    
+    setSyncing(true)
+    try {
+      // Sync Drive files
+      const driveResult = await apiClient.syncProjectDrive(params.id as string) as {
+        errors?: string[]
+        summary?: { 
+          total_new: number
+          all_files?: string[]
+          skipped_files?: string[]
+        }
+        skipped_existing?: number
+      }
+      console.log('Drive sync complete:', driveResult)
+      
+      // Log detailed sync results
+      if (driveResult.errors && driveResult.errors.length > 0) {
+        console.warn('Sync errors:', driveResult.errors)
+      }
+      if (driveResult.summary) {
+        console.log(`Drive sync summary: ${driveResult.summary.total_new} new proposals, ${driveResult.skipped_existing} skipped`)
+        console.log('All files:', driveResult.summary.all_files)
+        console.log('Skipped files:', driveResult.summary.skipped_files)
+      }
+      
+      // Sync BuildingConnected emails
+      try {
+        const bcResult = await apiClient.syncBuildingConnected(params.id as string) as {
+          new_proposals?: number
+          skipped_existing?: number
+          errors?: string[]
+        }
+        console.log('BuildingConnected sync complete:', bcResult)
+        
+        if (bcResult.new_proposals && bcResult.new_proposals > 0) {
+          console.log(`BuildingConnected: ${bcResult.new_proposals} new proposals added`)
+        }
+      } catch (bcError) {
+        // Don't fail if BuildingConnected sync fails
+        console.warn('BuildingConnected sync failed:', bcError)
+      }
+      
+      // Refresh stats after sync
+      await fetchBidderStats()
+    } catch (error) {
+      console.error('Error syncing:', error)
+      // Don't show error to user for auto-sync
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  useEffect(() => {
+    if (user && params.id) {
+      fetchProject()
+      fetchBidderStats()
+    }
+  }, [user, params.id])
+
+  // Auto-sync when project loads (for Drive folders)
+  useEffect(() => {
+    if (project?.drive_folder_id && project?.is_drive_folder && !syncing) {
+      handleAutoSync()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project?.id]) // Only sync once when project ID changes
 
   const fetchProject = async () => {
     try {
@@ -83,6 +146,9 @@ export default function ProjectDetail() {
     return null
   }
 
+  // Calculate total bidders across all trades
+  const totalBidders = bidderStats.reduce((sum, stat) => sum + stat.bidder_count, 0)
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -98,13 +164,24 @@ export default function ProjectDetail() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <div className="flex items-center space-x-2">
-              {project.is_drive_folder && (
-                <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
-                </svg>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                {project.is_drive_folder && (
+                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                  </svg>
+                )}
+                <h1 className="text-xl font-semibold text-black">{project.name}</h1>
+              </div>
+              {syncing && (
+                <div className="flex items-center space-x-2 text-blue-600">
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span className="text-sm font-medium">Syncing...</span>
+                </div>
               )}
-              <h1 className="text-xl font-semibold text-black">{project.name}</h1>
             </div>
           </div>
         </div>
@@ -132,7 +209,7 @@ export default function ProjectDetail() {
                       Trade
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 tracking-wider">
-                      Number of Bidders
+                      Number of Bidders ({totalBidders} Total)
                     </th>
                   </tr>
                 </thead>
