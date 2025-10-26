@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api-client'
 import { useAuth } from '@/app/providers'
+import ProjectTradesFlyout from '@/components/ProjectTradesFlyout'
 
 interface Project {
   id: string
@@ -13,42 +14,39 @@ interface Project {
   is_drive_folder?: boolean
 }
 
-interface Trade {
-  name: string
-  bidderCount: number
+interface BidderStat {
+  trade_id: string
+  trade_name: string
+  display_name: string
+  bidder_count: number
+  proposal_count: number
+  last_bid_received: string | null
 }
-
-// Demo data for construction trades
-const DEMO_TRADES: Trade[] = [
-  { name: 'Concrete', bidderCount: 4 },
-  { name: 'Framing', bidderCount: 3 },
-  { name: 'Electrical', bidderCount: 6 },
-  { name: 'Plumbing', bidderCount: 5 },
-  { name: 'HVAC', bidderCount: 4 },
-  { name: 'Roofing', bidderCount: 2 },
-  { name: 'Drywall', bidderCount: 3 },
-  { name: 'Flooring', bidderCount: 7 },
-  { name: 'Painting', bidderCount: 5 },
-  { name: 'Landscaping', bidderCount: 3 },
-  { name: 'Masonry', bidderCount: 2 },
-  { name: 'Steel/Structural', bidderCount: 1 },
-  { name: 'Windows & Doors', bidderCount: 4 },
-  { name: 'Insulation', bidderCount: 2 },
-  { name: 'Site Work', bidderCount: 3 },
-]
 
 export default function ProjectDetail() {
   const params = useParams()
   const router = useRouter()
   const { user } = useAuth()
   const [project, setProject] = useState<Project | null>(null)
+  const [bidderStats, setBidderStats] = useState<BidderStat[]>([])
   const [loading, setLoading] = useState(true)
+  const [showTradesFlyout, setShowTradesFlyout] = useState(false)
 
   useEffect(() => {
     if (user && params.id) {
       fetchProject()
+      fetchBidderStats()
     }
   }, [user, params.id])
+
+  const fetchBidderStats = async () => {
+    try {
+      const stats = await apiClient.getProjectStats(params.id as string) as BidderStat[]
+      setBidderStats(stats)
+    } catch (error) {
+      console.error('Error fetching bidder stats:', error)
+    }
+  }
 
   const fetchProject = async () => {
     try {
@@ -116,8 +114,14 @@ export default function ProjectDetail() {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
               <h2 className="text-lg font-medium text-black">Trade Bidders</h2>
+              <button
+                onClick={() => setShowTradesFlyout(true)}
+                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              >
+                Manage Trades
+              </button>
             </div>
             
             <div className="overflow-hidden">
@@ -133,25 +137,47 @@ export default function ProjectDetail() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {DEMO_TRADES.map((trade, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {trade.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div className="flex items-center">
-                          <span className="text-lg font-semibold text-gray-700">{trade.bidderCount}</span>
-                          <span className="ml-2 text-xs text-gray-500">bidders</span>
-                        </div>
+                  {bidderStats.length === 0 ? (
+                    <tr>
+                      <td colSpan={2} className="px-6 py-4 text-center text-sm text-gray-500">
+                        No trades configured for this project
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    bidderStats.map((stat) => (
+                      <tr 
+                        key={stat.trade_id} 
+                        className="hover:bg-gray-50 cursor-pointer"
+                        onClick={() => setShowTradesFlyout(true)}
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {stat.display_name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <div className="flex items-center">
+                            <span className="text-lg font-semibold text-gray-700">{stat.bidder_count}</span>
+                            <span className="ml-2 text-xs text-gray-500">bidders</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
         </div>
       </main>
+
+      {/* Project Trades Flyout */}
+      <ProjectTradesFlyout
+        isOpen={showTradesFlyout}
+        onClose={() => {
+          setShowTradesFlyout(false)
+          fetchBidderStats() // Refresh stats when closing
+        }}
+        projectId={params.id as string}
+      />
     </div>
   )
 }

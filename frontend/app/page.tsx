@@ -4,6 +4,7 @@ import { useAuth } from './providers'
 import { useEffect, useState, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import RootFolderDialog from '@/components/RootFolderDialog'
+import TradesFlyout from '@/components/TradesFlyout'
 import { apiClient } from '@/lib/api-client'
 import Image from 'next/image'
 import Toggle from '@/components/Toggle'
@@ -30,6 +31,7 @@ export default function Dashboard() {
   const [rootFolder, setRootFolder] = useState<RootFolder | null>(null)
   const [lastSync, setLastSync] = useState<string | null>(null)
   const [showRootFolderDialog, setShowRootFolderDialog] = useState(false)
+  const [showTradesFlyout, setShowTradesFlyout] = useState(false)
   const [syncing, setSyncing] = useState(false)
 
   useEffect(() => {
@@ -153,6 +155,13 @@ export default function Dashboard() {
           <div className="flex justify-between items-center h-16">
             <h1 className="text-xl font-semibold text-black">Bid Buddy</h1>
             <div className="flex items-center space-x-4">
+              {/* Trades Button */}
+              <button
+                onClick={() => setShowTradesFlyout(true)}
+                className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Trades
+              </button>
               {/* User Dropdown */}
               <Menu as="div" className="relative inline-block text-left">
                 <Menu.Button className="flex items-center space-x-2">
@@ -348,6 +357,12 @@ export default function Dashboard() {
         onClose={() => setShowRootFolderDialog(false)}
         onSave={handleSaveRootFolder}
         currentRootFolder={rootFolder}
+      />
+
+      {/* Trades Flyout */}
+      <TradesFlyout
+        isOpen={showTradesFlyout}
+        onClose={() => setShowTradesFlyout(false)}
       />
     </div>
   )

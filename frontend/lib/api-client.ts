@@ -117,6 +117,60 @@ class APIClient {
     })
   }
 
+  // Trade endpoints
+  async getTrades() {
+    return this.request('/api/trades')
+  }
+
+  async createTrade(trade: { name: string; display_order?: number }) {
+    return this.request('/api/trades', {
+      method: 'POST',
+      body: JSON.stringify(trade),
+    })
+  }
+
+  async updateTrade(tradeId: string, trade: { name: string; display_order?: number; is_active?: boolean }) {
+    return this.request(`/api/trades/${tradeId}`, {
+      method: 'PUT',
+      body: JSON.stringify(trade),
+    })
+  }
+
+  async deleteTrade(tradeId: string) {
+    return this.request(`/api/trades/${tradeId}`, {
+      method: 'DELETE',
+    })
+  }
+
+  // Project trades endpoints
+  async getProjectTrades(projectId: string) {
+    return this.request(`/api/projects/${projectId}/trades`)
+  }
+
+  async addProjectTrade(projectId: string, tradeId: string, customName?: string) {
+    return this.request(`/api/projects/${projectId}/trades`, {
+      method: 'POST',
+      body: JSON.stringify({ trade_id: tradeId, custom_name: customName }),
+    })
+  }
+
+  async updateProjectTrade(projectId: string, projectTradeId: string, tradeId: string, customName?: string, isActive?: boolean) {
+    return this.request(`/api/projects/${projectId}/trades/${projectTradeId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ trade_id: tradeId, custom_name: customName, is_active: isActive }),
+    })
+  }
+
+  async removeProjectTrade(projectId: string, projectTradeId: string) {
+    return this.request(`/api/projects/${projectId}/trades/${projectTradeId}`, {
+      method: 'DELETE',
+    })
+  }
+
+  async getProjectStats(projectId: string) {
+    return this.request(`/api/projects/${projectId}/stats`)
+  }
+
   // Auth endpoints
   async getCurrentUser() {
     return this.request('/api/auth/user')
