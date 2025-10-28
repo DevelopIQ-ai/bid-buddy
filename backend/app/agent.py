@@ -221,8 +221,8 @@ async def email_analysis_node(state: EmailProcessingState) -> EmailProcessingSta
 
         # Collect all attachments from this message
         for att in msg_attachments:
-            filename = getattr(att, 'filename', '')
-            if filename.lower().endswith(('.pdf', '.docx', '.doc')):
+            filename = getattr(att, 'filename', '') or ''
+            if filename and filename.lower().endswith(('.pdf', '.docx', '.doc')):
                 all_thread_attachments.append({
                     "filename": filename,
                     "message_id": msg.message_id,
@@ -432,8 +432,8 @@ async def analyze_attachment_node(state: EmailProcessingState) -> EmailProcessin
     for msg in thread.messages:
         msg_attachments = msg.attachments or []
         for att in msg_attachments:
-            filename = getattr(att, 'filename', '')
-            if filename.lower().endswith(('.pdf', '.docx', '.doc')):
+            filename = getattr(att, 'filename', '') or ''
+            if filename and filename.lower().endswith(('.pdf', '.docx', '.doc')):
                 all_attachments_to_process.append({
                     "attachment_id": getattr(att, 'attachment_id', None),
                     "filename": filename,

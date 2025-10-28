@@ -101,7 +101,7 @@ def transform_to_webhook_format(message):
     return webhook_payload
 
 
-def send_to_webhook(payload, webhook_url="http://localhost:8000/webhooks/agentmail"):
+def send_to_webhook(payload, webhook_url="https://bid-buddy-production.up.railway.app/webhooks/agentmail"):
     """Send the payload to the webhook endpoint."""
     print(f"\n5. Sending to webhook: {webhook_url}")
 
