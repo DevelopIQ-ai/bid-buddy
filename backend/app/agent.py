@@ -6,7 +6,11 @@ from dedalus_labs import AsyncDedalus, DedalusRunner
 from dotenv import load_dotenv
 from agentmail import AgentMail
 from app.utils.reducto import extract_from_file
-from app.utils.google_drive import upload_attachment_to_drive
+from app.utils.google_drive import upload_attachment_to_drive, get_supabase_service_client
+from app.utils.building_connected_email_extractor import (
+    BuildingConnectedEmailExtractor,
+    should_process_buildingconnected
+)
 from langgraph.graph import StateGraph, START, END
 from supabase import create_client, Client
 import logging
@@ -75,6 +79,8 @@ class EmailProcessingState(TypedDict, total=False):
     forward_status: str
     forward_message_id: str
     error: str
+    is_buildingconnected: bool
+    buildingconnected_data: Dict[str, Any]
 
 
 async def llm_json_with_retry(
@@ -127,6 +133,28 @@ async def llm_json_with_retry(
                 raise ValueError(f"JSON parsing failed after {max_retries} attempts: {str(e)}")
 
     raise ValueError("Unexpected error in JSON retry mechanism")
+
+
+async def check_buildingconnected_node(state: EmailProcessingState) -> EmailProcessingState:
+    """
+    LangGraph Node: Check if email is from BuildingConnected
+    
+    Args:
+        state: Current workflow state
+        
+    Returns:
+        Updated state with BuildingConnected flag
+    """
+    message_data = state["message_data"]
+    
+    # Check if it's a BuildingConnected email
+    is_buildingconnected = should_process_buildingconnected(message_data)
+    
+    logger.info(f"BuildingConnected email check: {is_buildingconnected}")
+    
+    return {
+        "is_buildingconnected": is_buildingconnected
+    }
 
 
 async def email_analysis_node(state: EmailProcessingState) -> EmailProcessingState:
@@ -309,6 +337,41 @@ async def forward_email_node(state: EmailProcessingState) -> EmailProcessingStat
             "error": str(e)
         }
 
+async def extract_buildingconnected_data_node(state: EmailProcessingState) -> EmailProcessingState:
+    """
+    LangGraph Node: Extract data from BuildingConnected emails
+    
+    Args:
+        state: Current workflow state
+        
+    Returns:
+        Updated state with extracted BuildingConnected data
+    """
+    message_data = state["message_data"]
+    
+    try:
+        # Extract data from BuildingConnected email
+        extractor = BuildingConnectedEmailExtractor()
+        extracted_data = extractor.process_buildingconnected_email(message_data)
+        
+        logger.info(f"BuildingConnected extraction complete: {extracted_data}")
+        
+        return {
+            "buildingconnected_data": extracted_data,
+            "bid_proposal_included": False  # We're not downloading/processing proposals
+        }
+        
+    except Exception as e:
+        logger.error(f"BuildingConnected extraction failed: {e}")
+        return {
+            "buildingconnected_data": {
+                "success": False,
+                "error": str(e)
+            },
+            "error": f"BuildingConnected extraction failed: {str(e)}"
+        }
+
+
 async def analyze_attachment_node(state: EmailProcessingState) -> EmailProcessingState:
     """
     LangGraph Node: Download and analyze PDF/DOCX attachments with Reducto.
@@ -400,7 +463,7 @@ async def analyze_attachment_node(state: EmailProcessingState) -> EmailProcessin
             trade = extract_value(result.get("trade"))
             project_name = extract_value(result.get("project_name"))
             
-            # Upload to Google Drive if it's a bid proposal
+            # Upload to Google Drive and track proposal if it's a bid
             drive_upload_result = None
             if is_bid_proposal and company_name and trade:
                 try:
@@ -412,6 +475,16 @@ async def analyze_attachment_node(state: EmailProcessingState) -> EmailProcessin
                         project_name=project_name
                     )
                     print(f"[INFO] Uploaded to Google Drive: {drive_upload_result}")
+                    
+                    # Track proposal in database
+                    track_proposal(
+                        company_name=company_name,
+                        trade_name=trade,
+                        project_name=project_name,
+                        drive_file_id=drive_upload_result.get('file_id') if drive_upload_result.get('success') else None,
+                        drive_file_name=filename,
+                        email_source=attachment.get('from')
+                    )
                 except Exception as upload_error:
                     print(f"[ERROR] Failed to upload to Google Drive: {upload_error}")
                     drive_upload_result = {"success": False, "error": str(upload_error)}
@@ -443,6 +516,15 @@ async def analyze_attachment_node(state: EmailProcessingState) -> EmailProcessin
         "total_count": len(proposals)
     }
 
+def route_after_buildingconnected_check(state: EmailProcessingState) -> str:
+    """Route based on BuildingConnected check."""
+    # If it's BuildingConnected, extract data and end
+    if state.get("is_buildingconnected"):
+        return "extract_buildingconnected"
+    # Otherwise, continue with normal analysis
+    return "email_analysis"
+
+
 def route_after_analysis(state: EmailProcessingState) -> str:
     """Route based on email analysis: forward, analyze, or end."""
     # If bid proposal included, analyze attachments
@@ -457,10 +539,26 @@ def route_after_analysis(state: EmailProcessingState) -> str:
 
 # Build the LangGraph workflow
 workflow = StateGraph(EmailProcessingState)
+workflow.add_node("check_buildingconnected", check_buildingconnected_node)
 workflow.add_node("email_analysis", email_analysis_node)
 workflow.add_node("analyze_attachment", analyze_attachment_node)
 workflow.add_node("forward_email", forward_email_node)
-workflow.add_edge(START, "email_analysis")
+workflow.add_node("extract_buildingconnected", extract_buildingconnected_data_node)
+
+# Start with BuildingConnected check
+workflow.add_edge(START, "check_buildingconnected")
+
+# Route based on BuildingConnected check
+workflow.add_conditional_edges(
+    "check_buildingconnected",
+    route_after_buildingconnected_check,
+    {
+        "email_analysis": "email_analysis",
+        "extract_buildingconnected": "extract_buildingconnected",
+    }
+)
+
+# Route after normal email analysis
 workflow.add_conditional_edges(
     "email_analysis",
     route_after_analysis,
@@ -470,9 +568,85 @@ workflow.add_conditional_edges(
         END: END
     }
 )
+
+# End nodes
 workflow.add_edge("forward_email", END)
 workflow.add_edge("analyze_attachment", END)
+workflow.add_edge("extract_buildingconnected", END)
+
 email_workflow = workflow.compile()
+
+
+def track_proposal(
+    company_name: str,
+    trade_name: str,
+    project_name: str,
+    drive_file_id: Optional[str] = None,
+    drive_file_name: Optional[str] = None,
+    email_source: Optional[str] = None
+) -> bool:
+    """
+    Track a proposal in the database.
+    
+    Returns:
+        True if successfully tracked, False otherwise
+    """
+    try:
+        supabase = get_supabase_service_client()
+        
+        # Find the project by name
+        project_response = supabase.table('projects').select('id, user_id').eq('name', project_name).execute()
+        
+        if not project_response.data:
+            logger.warning(f"Project not found: {project_name}")
+            return False
+        
+        project = project_response.data[0]
+        
+        # Find the trade by name for this user
+        trade_response = supabase.table('trades').select('id').eq(
+            'user_id', project['user_id']
+        ).eq('name', trade_name).execute()
+        
+        trade_id = None
+        if trade_response.data:
+            trade_id = trade_response.data[0]['id']
+        else:
+            # Create the trade if it doesn't exist
+            new_trade = supabase.table('trades').insert({
+                'user_id': project['user_id'],
+                'name': trade_name
+            }).execute()
+            if new_trade.data:
+                trade_id = new_trade.data[0]['id']
+                
+                # Also add to project_trades
+                supabase.table('project_trades').insert({
+                    'project_id': project['id'],
+                    'trade_id': trade_id
+                }).execute()
+        
+        # Insert the proposal
+        proposal_data = {
+            'project_id': project['id'],
+            'trade_id': trade_id,
+            'company_name': company_name,
+            'drive_file_id': drive_file_id,
+            'drive_file_name': drive_file_name,
+            'email_source': email_source
+        }
+        
+        supabase.table('proposals').insert(proposal_data).execute()
+        
+        # Refresh the materialized view
+        supabase.rpc('refresh_bidder_stats').execute()
+        
+        logger.info(f"Tracked proposal: {company_name} - {trade_name} - {project_name}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error tracking proposal: {e}")
+        return False
 
 
 # Main entry point for processing emails

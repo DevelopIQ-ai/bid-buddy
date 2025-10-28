@@ -3,6 +3,18 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
+interface AttachmentAnalyzed {
+  filename: string
+  company_name?: string
+  trade?: string
+  project_name?: string
+  status?: string
+  drive_upload?: {
+    success: boolean
+    error?: string
+  }
+}
+
 interface EmailTrace {
   trace_id: string
   timestamp: string
@@ -18,7 +30,7 @@ interface EmailTrace {
   forward_message_id: string | null
 
   attachment_count: number | null
-  attachments_analyzed: any[] | null
+  attachments_analyzed: AttachmentAnalyzed[] | null
 
   status: string
   error: string | null

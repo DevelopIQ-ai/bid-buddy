@@ -34,7 +34,9 @@ async def handle_agentmail_webhook(request: Request):
 
             # Determine action based on state
             action = "skipped"
-            if state.get("bid_proposal_included"):
+            if state.get("is_buildingconnected"):
+                action = "buildingconnected_extracted"
+            elif state.get("bid_proposal_included"):
                 action = "bid_proposal"
             elif state.get("should_forward"):
                 action = "forwarded"
@@ -43,13 +45,15 @@ async def handle_agentmail_webhook(request: Request):
                 "status": "ok",
                 "action": action,
                 "analysis": {
+                    "is_buildingconnected": state.get("is_buildingconnected", False),
                     "bid_proposal_included": state.get("bid_proposal_included", False),
                     "should_forward": state.get("should_forward", False),
                     "forward_result": {
                         "status": state.get("forward_status"),
                         "message_id": state.get("forward_message_id")
                     } if state.get("forward_status") else None,
-                    "attachment_analysis": {"proposals": state.get("proposals"), "total_count": state.get("total_count")} if state.get("proposals") else None
+                    "attachment_analysis": {"proposals": state.get("proposals"), "total_count": state.get("total_count")} if state.get("proposals") else None,
+                    "buildingconnected_data": state.get("buildingconnected_data") if state.get("buildingconnected_data") else None
                 }
             }
 
