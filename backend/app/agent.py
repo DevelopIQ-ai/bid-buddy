@@ -216,7 +216,7 @@ async def email_analysis_node(state: EmailProcessingState) -> EmailProcessingSta
             "subject": msg.subject,
             "text": msg.text[:500] if msg.text else "",
             "timestamp": str(msg.timestamp),
-            "attachments": [getattr(att, 'filename', '') for att in msg_attachments]
+            "attachments": [getattr(att, 'filename', '') or '' for att in msg_attachments]
         })
 
         # Collect all attachments from this message
