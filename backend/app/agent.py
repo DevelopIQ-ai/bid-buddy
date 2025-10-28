@@ -6,7 +6,7 @@ from dedalus_labs import AsyncDedalus, DedalusRunner
 from dotenv import load_dotenv
 from agentmail import AgentMail
 from app.utils.reducto import extract_from_file
-from app.utils.google_drive import upload_attachment_to_drive, get_supabase_service_client
+from app.utils.google_drive import upload_attachment_to_drive_with_retry, get_supabase_service_client
 from app.utils.building_connected_email_extractor import (
     BuildingConnectedEmailExtractor,
     should_process_buildingconnected
@@ -467,7 +467,7 @@ async def analyze_attachment_node(state: EmailProcessingState) -> EmailProcessin
             drive_upload_result = None
             if is_bid_proposal and company_name and trade:
                 try:
-                    drive_upload_result = upload_attachment_to_drive(
+                    drive_upload_result = upload_attachment_to_drive_with_retry(
                         file_data=file_data,
                         original_filename=filename,
                         company_name=company_name,

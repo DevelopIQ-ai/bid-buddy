@@ -5,7 +5,7 @@ import logging
 
 from app.utils.auth import get_current_user
 from app.utils.database import get_supabase_client
-from app.utils.google_drive import get_google_token, get_drive_service
+from app.utils.google_drive import get_google_token, get_drive_service, refresh_and_update_token
 
 router = APIRouter(prefix="/api/drive", tags=["Google Drive"])
 logger = logging.getLogger(__name__)

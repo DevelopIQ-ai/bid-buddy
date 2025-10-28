@@ -1,12 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi import Request
 from typing import Dict, Any
-from app.utils.google_drive import get_drive_service
+from app.utils.google_drive import get_drive_service, refresh_and_update_token, get_supabase_service_client
 from app.utils.database import get_supabase_client
 from app.utils.auth import get_current_user
 from app.utils.filename_parser import parse_filename
 import logging
 import re
+import os
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -39,28 +40,114 @@ async def sync_project_drive_folder(
         if not project.get('drive_folder_id'):
             raise HTTPException(status_code=400, detail="Project has no Google Drive folder")
         
-        # Get Google token from headers or database
+        # Get Google tokens from headers or database
         google_token = request.headers.get("x-google-token")
+        google_refresh_token = request.headers.get("x-google-refresh-token")
+        profile_response = None
+        user_email = None
         
-        if not google_token:
-            # Try to get from database
-            google_token = get_google_token(user['id'])
+        # If no tokens in headers, get from database
+        if not google_token or not google_refresh_token:
+            # Get the user's email to fetch tokens
+            supabase_service = get_supabase_service_client()
+            
+            # Get user's profile with tokens
+            profile_response = supabase_service.table('profiles').select(
+                'email, google_access_token, google_refresh_token'
+            ).eq('id', user['id']).execute()
+            
+            if profile_response.data:
+                profile = profile_response.data[0]
+                user_email = profile.get('email')
+                
+                if not google_token:
+                    google_token = profile.get('google_access_token')
+                if not google_refresh_token:
+                    google_refresh_token = profile.get('google_refresh_token')
+                    
+                # If still no valid token, try to refresh
+                if not google_token and user_email and google_refresh_token:
+                    logger.info(f"Access token missing, attempting refresh for user {user['id']}")
+                    google_token, google_refresh_token = refresh_and_update_token(user_email)
+            
             if not google_token:
                 raise HTTPException(
                     status_code=401, 
                     detail="Google Drive authentication not available. Please reconnect."
                 )
         
-        # Get Drive service
-        drive_service = get_drive_service(google_token)
+        # Store refresh token if we got it from headers
+        if google_refresh_token and request.headers.get("x-google-refresh-token"):
+            try:
+                supabase.table('profiles').update({
+                    'google_refresh_token': google_refresh_token
+                }).eq('id', user['id']).execute()
+            except:
+                pass  # Non-critical, continue
         
-        # List all PDF files in the folder
+        # Get Drive service with refresh capability
+        try:
+            drive_service = get_drive_service(google_token, google_refresh_token, auto_refresh=True)
+        except Exception as e:
+            # If service creation fails, try to refresh token
+            if google_refresh_token and profile_response.data:
+                user_email = profile_response.data[0].get('email')
+                if user_email:
+                    logger.warning(f"Drive service creation failed, attempting token refresh: {e}")
+                    google_token, google_refresh_token = refresh_and_update_token(user_email)
+                    
+                    if google_token:
+                        drive_service = get_drive_service(google_token, google_refresh_token, auto_refresh=True)
+                    else:
+                        raise HTTPException(
+                            status_code=401,
+                            detail="Failed to refresh Google Drive authentication. Please reconnect."
+                        )
+                else:
+                    raise
+            else:
+                raise
+        
+        # List all PDF files in the folder with error handling
         query = f"'{project['drive_folder_id']}' in parents and mimeType='application/pdf' and trashed=false"
-        results = drive_service.files().list(
-            q=query,
-            fields="files(id, name, createdTime, modifiedTime)",
-            pageSize=1000
-        ).execute()
+        
+        try:
+            results = drive_service.files().list(
+                q=query,
+                fields="files(id, name, createdTime, modifiedTime)",
+                pageSize=1000
+            ).execute()
+        except Exception as e:
+            error_str = str(e)
+            # Check if it's an authentication error
+            if '401' in error_str or 'unauthorized' in error_str.lower():
+                # Try to refresh token one more time
+                if profile_response.data:
+                    user_email = profile_response.data[0].get('email')
+                    if user_email:
+                        logger.warning(f"Drive API call failed with auth error, attempting final refresh: {e}")
+                        google_token, google_refresh_token = refresh_and_update_token(user_email)
+                        
+                        if google_token:
+                            drive_service = get_drive_service(google_token, google_refresh_token, auto_refresh=True)
+                            # Retry the API call
+                            results = drive_service.files().list(
+                                q=query,
+                                fields="files(id, name, createdTime, modifiedTime)",
+                                pageSize=1000
+                            ).execute()
+                        else:
+                            raise HTTPException(
+                                status_code=401,
+                                detail="Google Drive authentication expired. Please reconnect from the dashboard."
+                            )
+                    else:
+                        raise HTTPException(status_code=401, detail="Authentication failed. Please reconnect Google Drive.")
+                else:
+                    raise HTTPException(status_code=401, detail="Authentication failed. Please reconnect Google Drive.")
+            else:
+                # Re-raise non-auth errors
+                raise
         
         files = results.get('files', [])
         
