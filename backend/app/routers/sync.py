@@ -1,12 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi import Request
 from typing import Dict, Any
-from app.utils.google_drive import get_drive_service
+from app.utils.google_drive import get_drive_service, refresh_and_update_token, get_supabase_service_client
 from app.utils.database import get_supabase_client
 from app.utils.auth import get_current_user
 from app.utils.filename_parser import parse_filename
 import logging
 import re
+import os
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -39,28 +40,114 @@ async def sync_project_drive_folder(
         if not project.get('drive_folder_id'):
             raise HTTPException(status_code=400, detail="Project has no Google Drive folder")
         
-        # Get Google token from headers or database
+        # Get Google tokens from headers or database
         google_token = request.headers.get("x-google-token")
+        google_refresh_token = request.headers.get("x-google-refresh-token")
+        profile_response = None
+        user_email = None
         
-        if not google_token:
-            # Try to get from database
-            google_token = get_google_token(user['id'])
+        # If no tokens in headers, get from database
+        if not google_token or not google_refresh_token:
+            # Get the user's email to fetch tokens
+            supabase_service = get_supabase_service_client()
+            
+            # Get user's profile with tokens
+            profile_response = supabase_service.table('profiles').select(
+                'email, google_access_token, google_refresh_token'
+            ).eq('id', user['id']).execute()
+            
+            if profile_response.data:
+                profile = profile_response.data[0]
+                user_email = profile.get('email')
+                
+                if not google_token:
+                    google_token = profile.get('google_access_token')
+                if not google_refresh_token:
+                    google_refresh_token = profile.get('google_refresh_token')
+                    
+                # If still no valid token, try to refresh
+                if not google_token and user_email and google_refresh_token:
+                    logger.info(f"Access token missing, attempting refresh for user {user['id']}")
+                    google_token, google_refresh_token = refresh_and_update_token(user_email)
+            
             if not google_token:
                 raise HTTPException(
                     status_code=401, 
                     detail="Google Drive authentication not available. Please reconnect."
                 )
         
-        # Get Drive service
-        drive_service = get_drive_service(google_token)
+        # Store refresh token if we got it from headers
+        if google_refresh_token and request.headers.get("x-google-refresh-token"):
+            try:
+                supabase.table('profiles').update({
+                    'google_refresh_token': google_refresh_token
+                }).eq('id', user['id']).execute()
+            except:
+                pass  # Non-critical, continue
         
-        # List all PDF files in the folder
+        # Get Drive service with refresh capability
+        try:
+            drive_service = get_drive_service(google_token, google_refresh_token, auto_refresh=True)
+        except Exception as e:
+            # If service creation fails, try to refresh token
+            if google_refresh_token and profile_response.data:
+                user_email = profile_response.data[0].get('email')
+                if user_email:
+                    logger.warning(f"Drive service creation failed, attempting token refresh: {e}")
+                    google_token, google_refresh_token = refresh_and_update_token(user_email)
+                    
+                    if google_token:
+                        drive_service = get_drive_service(google_token, google_refresh_token, auto_refresh=True)
+                    else:
+                        raise HTTPException(
+                            status_code=401,
+                            detail="Failed to refresh Google Drive authentication. Please reconnect."
+                        )
+                else:
+                    raise
+            else:
+                raise
+        
+        # List all PDF files in the folder with error handling
         query = f"'{project['drive_folder_id']}' in parents and mimeType='application/pdf' and trashed=false"
-        results = drive_service.files().list(
-            q=query,
-            fields="files(id, name, createdTime, modifiedTime)",
-            pageSize=1000
-        ).execute()
+        
+        try:
+            results = drive_service.files().list(
+                q=query,
+                fields="files(id, name, createdTime, modifiedTime)",
+                pageSize=1000
+            ).execute()
+        except Exception as e:
+            error_str = str(e)
+            # Check if it's an authentication error
+            if '401' in error_str or 'unauthorized' in error_str.lower():
+                # Try to refresh token one more time
+                if profile_response.data:
+                    user_email = profile_response.data[0].get('email')
+                    if user_email:
+                        logger.warning(f"Drive API call failed with auth error, attempting final refresh: {e}")
+                        google_token, google_refresh_token = refresh_and_update_token(user_email)
+                        
+                        if google_token:
+                            drive_service = get_drive_service(google_token, google_refresh_token, auto_refresh=True)
+                            # Retry the API call
+                            results = drive_service.files().list(
+                                q=query,
+                                fields="files(id, name, createdTime, modifiedTime)",
+                                pageSize=1000
+                            ).execute()
+                        else:
+                            raise HTTPException(
+                                status_code=401,
+                                detail="Google Drive authentication expired. Please reconnect from the dashboard."
+                            )
+                    else:
+                        raise HTTPException(status_code=401, detail="Authentication failed. Please reconnect Google Drive.")
+                else:
+                    raise HTTPException(status_code=401, detail="Authentication failed. Please reconnect Google Drive.")
+            else:
+                # Re-raise non-auth errors
+                raise
         
         files = results.get('files', [])
         
@@ -275,6 +362,10 @@ async def sync_buildingconnected_emails(
     Looks for emails from team@buildingconnected.com with subject "Proposal Submitted - ..."
     """
     try:
+        import os
+        from agentmail import AgentMail
+        from app.utils.building_connected_email_extractor import BuildingConnectedEmailExtractor
+        
         supabase = get_supabase_client(user['access_token'])
         
         # Get project details
@@ -287,11 +378,95 @@ async def sync_buildingconnected_emails(
         
         project = project_response.data[0]
         
-        # Get BuildingConnected emails from document_extractions
-        # These should have been processed when emails came in
-        bc_extractions = supabase.table('document_extractions').select('*').eq(
-            'project_name', project['name']
-        ).execute()
+        # Initialize AgentMail to fetch BuildingConnected emails
+        client = AgentMail(api_key=os.getenv("AGENTMAIL_API_KEY"))
+        
+        # Use the specific bids inbox for BuildingConnected emails
+        # This is where all bid-related emails are collected
+        inbox_id = os.getenv("AGENTMAIL_INBOX_ID")
+        if not inbox_id:
+            raise HTTPException(status_code=500, detail="PRIMARY_USER_EMAIL not set")
+        inbox_id = inbox_id.strip()
+        
+        logger.info(f"Using inbox_id: {inbox_id} for BuildingConnected sync")
+        
+        # Fetch recent messages and filter for BuildingConnected emails
+        # AgentMail doesn't support query parameter, so we need to filter manually
+        try:
+            messages_iter = client.inboxes.messages.list(
+                inbox_id=inbox_id,
+                limit=200  # Fetch more messages to ensure we get BuildingConnected emails
+            )
+            
+            # Filter for BuildingConnected emails with correct subject format
+            messages = []
+            for msg in messages_iter:
+                # Check if from BuildingConnected and has correct subject prefix
+                if (msg.from_ and 'buildingconnected.com' in msg.from_.lower() and
+                    msg.subject and msg.subject.startswith("Proposal Submitted - ")):
+                    messages.append(msg)
+                    
+            logger.info(f"Found {len(messages)} BuildingConnected emails to process")
+            
+        except Exception as e:
+            logger.error(f"Error fetching BuildingConnected emails: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to fetch emails: {str(e)}")
+        
+        # Process each email to extract company and trade information
+        bc_extractions = []
+        extractor = BuildingConnectedEmailExtractor()
+        
+        # Import fuzzy matching
+        from difflib import SequenceMatcher
+        
+        for message in messages:
+            try:
+                # Subject already checked in filtering above
+                # Get full message content using message_id attribute
+                full_message = client.inboxes.messages.get(
+                    inbox_id=inbox_id,
+                    message_id=message.message_id
+                )
+                
+                email_data = {
+                    "subject": full_message.subject,
+                    "html": full_message.html_body or "",
+                    "text": full_message.text_body or "",
+                    "from_": full_message.from_email
+                }
+                
+                # Extract data from email
+                extracted = extractor.process_buildingconnected_email(email_data)
+                
+                if extracted.get('success'):
+                    # Extract project name from subject
+                    email_project_name = extracted.get('project_name')
+                    
+                    # Fuzzy match against current project name
+                    if email_project_name:
+                        similarity = SequenceMatcher(None, 
+                                                   project['name'].lower(), 
+                                                   email_project_name.lower()).ratio()
+                        
+                        # Only include if similarity is above threshold (0.7 = 70% match)
+                        if similarity >= 0.7:
+                            logger.info(f"Including BuildingConnected email for project '{email_project_name}' "
+                                      f"(matched '{project['name']}' with {similarity:.0%} confidence)")
+                            
+                            bc_extractions.append({
+                                'company_name': extracted.get('company_name'),
+                                'trade': extracted.get('trade'),
+                                'project_name': email_project_name,
+                                'attachment_url': message.message_id,  # Use message ID as reference
+                                'is_bid_proposal': True,
+                                'similarity_score': similarity
+                            })
+                        else:
+                            logger.debug(f"Skipping BuildingConnected email for project '{email_project_name}' "
+                                       f"(low match with '{project['name']}': {similarity:.0%})")
+            except Exception as e:
+                logger.error(f"Error processing BuildingConnected email {message.message_id}: {e}")
+                continue
         
         # Get existing proposals for this project
         existing_proposals = supabase.table('proposals').select(
@@ -316,7 +491,7 @@ async def sync_buildingconnected_emails(
         errors = []
         
         # Process each BuildingConnected extraction
-        for extraction in bc_extractions.data:
+        for extraction in bc_extractions:
             company_name = extraction.get('company_name')
             trade_name = extraction.get('trade')
             attachment_url = extraction.get('attachment_url')

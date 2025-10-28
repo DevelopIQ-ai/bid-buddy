@@ -1,12 +1,14 @@
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaInMemoryUpload
+from google.auth.transport.requests import Request
 import logging
 import os
 import mimetypes
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Tuple
 from difflib import SequenceMatcher
 from supabase import create_client, Client
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -50,13 +52,85 @@ def get_google_token(user_id: str) -> Optional[str]:
         return None
 
 
-def get_drive_service(access_token: str, refresh_token: Optional[str] = None):
+def refresh_and_update_token(email: str) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Refresh Google OAuth token if expired and update in database.
+    
+    Args:
+        email: User email to refresh token for
+        
+    Returns:
+        Tuple of (access_token, refresh_token) or (None, None) if refresh fails
+    """
+    try:
+        supabase = get_supabase_service_client()
+        
+        # Get current tokens from database
+        response = supabase.table('profiles').select(
+            'google_access_token, google_refresh_token'
+        ).eq('email', email).execute()
+        
+        if not response.data:
+            logger.error(f"No profile found for {email}")
+            return None, None
+            
+        profile = response.data[0]
+        access_token = profile.get('google_access_token')
+        refresh_token = profile.get('google_refresh_token')
+        
+        if not refresh_token:
+            logger.error(f"No refresh token found for {email}")
+            return None, None
+            
+        # Get OAuth client credentials
+        client_id = os.getenv("GOOGLE_CLIENT_ID")
+        client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+        
+        if not client_id or not client_secret:
+            logger.error("Google OAuth client credentials not configured")
+            return None, None
+            
+        # Create credentials with refresh token
+        credentials = Credentials(
+            token=access_token,
+            refresh_token=refresh_token,
+            token_uri='https://oauth2.googleapis.com/token',
+            client_id=client_id,
+            client_secret=client_secret
+        )
+        
+        # Check if token is expired and refresh if needed
+        if not credentials.valid:
+            logger.info(f"Token expired for {email}, refreshing...")
+            if credentials.expired and credentials.refresh_token:
+                credentials.refresh(Request())
+                
+                # Update the new access token in database
+                supabase.table('profiles').update({
+                    'google_access_token': credentials.token
+                }).eq('email', email).execute()
+                
+                logger.info(f"Successfully refreshed token for {email}")
+                return credentials.token, refresh_token
+            else:
+                logger.error(f"Unable to refresh token for {email} - missing refresh token or credentials")
+                return None, None
+        
+        return access_token, refresh_token
+        
+    except Exception as e:
+        logger.error(f"Error refreshing token for {email}: {e}")
+        return None, None
+
+
+def get_drive_service(access_token: str, refresh_token: Optional[str] = None, auto_refresh: bool = True):
     """
     Build Google Drive service with credentials that support auto-refresh.
 
     Args:
         access_token: Google OAuth access token
         refresh_token: Google OAuth refresh token (optional, but required for auto-refresh)
+        auto_refresh: Whether to automatically refresh expired tokens (default: True)
 
     Returns:
         Google Drive service instance
@@ -73,6 +147,20 @@ def get_drive_service(access_token: str, refresh_token: Optional[str] = None):
             client_id=client_id,
             client_secret=client_secret
         )
+        
+        # Check if token needs refresh
+        if auto_refresh and not credentials.valid:
+            logger.info("Access token expired, refreshing...")
+            try:
+                credentials.refresh(Request())
+                logger.info("Successfully refreshed access token")
+                
+                # Optionally update the token in database (if we have user context)
+                # This would need to be handled by the caller
+                
+            except Exception as e:
+                logger.error(f"Failed to refresh token: {e}")
+                raise
     else:
         # Fallback: credentials without refresh (will fail when token expires)
         logger.warning("Creating credentials without refresh token - uploads will fail when token expires")
@@ -97,13 +185,24 @@ def find_best_matching_folder(service, parent_folder_id: str, project_name: str)
     try:
         # List all folders in the parent folder
         query = f"'{parent_folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
-        results = service.files().list(
-            q=query,
-            fields='files(id, name)',
-            pageSize=100,
-            supportsAllDrives=True,
-            includeItemsFromAllDrives=True
-        ).execute()
+        
+        try:
+            results = service.files().list(
+                q=query,
+                fields='files(id, name)',
+                pageSize=100,
+                supportsAllDrives=True,
+                includeItemsFromAllDrives=True
+            ).execute()
+        except Exception as e:
+            # Check if it's an authentication error
+            error_str = str(e)
+            if '401' in error_str or 'unauthorized' in error_str.lower():
+                logger.warning(f"Authentication error in find_best_matching_folder, service may need refresh: {e}")
+                # The caller should handle token refresh
+                raise
+            else:
+                raise
         
         folders = results.get('files', [])
         
@@ -146,6 +245,87 @@ def find_best_matching_folder(service, parent_folder_id: str, project_name: str)
         return None
 
 
+def upload_attachment_to_drive_with_retry(
+    file_data: bytes,
+    original_filename: str,
+    company_name: str,
+    trade: str,
+    project_name: str
+) -> Dict[str, Any]:
+    """
+    Wrapper function that handles token refresh and retries for Google Drive uploads.
+    This is the main function that should be called from the webhook handler.
+    
+    Args:
+        file_data: The raw file bytes to upload
+        original_filename: The original filename (for extension extraction)
+        company_name: The company name extracted from the document
+        trade: The trade/work type extracted from the document
+        project_name: The project name the document belongs to
+        
+    Returns:
+        Dict containing the Google Drive file ID and web link
+    """
+    max_retries = 2
+    last_error = None
+    
+    for attempt in range(max_retries):
+        try:
+            # First attempt with existing tokens
+            if attempt == 0:
+                return upload_attachment_to_drive(
+                    file_data=file_data,
+                    original_filename=original_filename,
+                    company_name=company_name,
+                    trade=trade,
+                    project_name=project_name,
+                    access_token=None,  # Will be fetched from DB
+                    refresh_token=None,  # Will be fetched from DB
+                    drive_root_folder_id=None  # Will be fetched from DB
+                )
+            else:
+                # Subsequent attempts: force token refresh first
+                PRIMARY_USER_EMAIL = os.getenv("PRIMARY_USER_EMAIL")
+                if PRIMARY_USER_EMAIL:
+                    logger.info(f"Attempt {attempt + 1}: Forcing token refresh before retry")
+                    access_token, refresh_token = refresh_and_update_token(PRIMARY_USER_EMAIL)
+                    
+                    if access_token:
+                        return upload_attachment_to_drive(
+                            file_data=file_data,
+                            original_filename=original_filename,
+                            company_name=company_name,
+                            trade=trade,
+                            project_name=project_name,
+                            access_token=access_token,
+                            refresh_token=refresh_token,
+                            drive_root_folder_id=None  # Will be fetched from DB
+                        )
+                    else:
+                        logger.error("Failed to refresh token on retry")
+                        
+        except Exception as e:
+            last_error = e
+            logger.error(f"Upload attempt {attempt + 1} failed: {e}")
+            
+            # Check if it's an auth error and we should retry
+            error_str = str(e).lower()
+            if ('401' in error_str or 'unauthorized' in error_str or 
+                'invalid credentials' in error_str or 'token' in error_str):
+                if attempt < max_retries - 1:
+                    logger.info(f"Authentication error detected, will retry (attempt {attempt + 1}/{max_retries})")
+                    continue
+            
+            # For non-auth errors, don't retry
+            break
+    
+    # All retries failed
+    return {
+        'success': False,
+        'error': f"Failed after {max_retries} attempts: {str(last_error)}"
+    }
+
+
 def upload_attachment_to_drive(
     file_data: bytes,
     original_filename: str,
@@ -173,12 +353,12 @@ def upload_attachment_to_drive(
         Dict containing the Google Drive file ID and web link
     """
     try:
+        PRIMARY_USER_EMAIL = os.getenv("PRIMARY_USER_EMAIL")
+        if not PRIMARY_USER_EMAIL:
+            raise ValueError("PRIMARY_USER_EMAIL not configured in environment")
+            
         # Get tokens and Drive folder from database if not provided
         if not access_token or not drive_root_folder_id:
-            PRIMARY_USER_EMAIL = os.getenv("PRIMARY_USER_EMAIL")
-            if not PRIMARY_USER_EMAIL:
-                raise ValueError("PRIMARY_USER_EMAIL not configured in environment")
-
             supabase = get_supabase_service_client()
 
             # Get user's profile with tokens and Drive folder
@@ -198,16 +378,32 @@ def upload_attachment_to_drive(
             if not drive_root_folder_id:
                 drive_root_folder_id = profile.get('drive_root_folder_id')
 
-            if not access_token:
-                raise RuntimeError(f"No Google access token found for {PRIMARY_USER_EMAIL}. Please sign in to the dashboard to connect Google Drive.")
-
             if not drive_root_folder_id:
                 raise RuntimeError(f"No Drive root folder configured for {PRIMARY_USER_EMAIL}. Please configure it in the dashboard.")
 
+        # If we still don't have tokens, try to refresh them
+        if not access_token or not refresh_token:
+            logger.info(f"Missing tokens, attempting to refresh for {PRIMARY_USER_EMAIL}")
+            access_token, refresh_token = refresh_and_update_token(PRIMARY_USER_EMAIL)
+            
+            if not access_token:
+                raise RuntimeError(f"No valid Google access token for {PRIMARY_USER_EMAIL}. Please sign in to the dashboard to reconnect Google Drive.")
+
         logger.info(f"Using Google Drive root folder: {drive_root_folder_id}")
 
-        # Get Drive service with refresh capability
-        service = get_drive_service(access_token, refresh_token)
+        # Create Drive service with auto-refresh capability
+        try:
+            service = get_drive_service(access_token, refresh_token, auto_refresh=True)
+        except Exception as e:
+            # If initial service creation fails, try to refresh token
+            logger.warning(f"Initial Drive service creation failed: {e}, attempting token refresh")
+            access_token, refresh_token = refresh_and_update_token(PRIMARY_USER_EMAIL)
+            
+            if not access_token:
+                raise RuntimeError(f"Failed to refresh Google token for {PRIMARY_USER_EMAIL}. Please sign in to the dashboard to reconnect Google Drive.")
+            
+            # Try again with refreshed token
+            service = get_drive_service(access_token, refresh_token, auto_refresh=True)
         
         # Extract file extension from original filename
         _, extension = os.path.splitext(original_filename)
@@ -310,19 +506,52 @@ def upload_attachment_to_drive(
         if folder_id:
             file_metadata['parents'] = [folder_id]
         
-        # Upload file
+        # Upload file with retry on auth failure
         media = MediaInMemoryUpload(
             file_data,
             mimetype=mime_type,
             resumable=True
         )
         
-        file = service.files().create(
-            body=file_metadata,
-            media_body=media,
-            fields='id, name, webViewLink, webContentLink',
-            supportsAllDrives=True
-        ).execute()
+        try:
+            file = service.files().create(
+                body=file_metadata,
+                media_body=media,
+                fields='id, name, webViewLink, webContentLink',
+                supportsAllDrives=True
+            ).execute()
+        except Exception as e:
+            # Check if it's an authentication error (401)
+            error_str = str(e)
+            if '401' in error_str or 'unauthorized' in error_str.lower() or 'invalid credentials' in error_str.lower():
+                logger.warning(f"Authentication error during upload, attempting token refresh: {e}")
+                
+                # Try to refresh the token
+                access_token, refresh_token = refresh_and_update_token(PRIMARY_USER_EMAIL)
+                
+                if not access_token:
+                    raise RuntimeError(f"Failed to refresh expired Google token for {PRIMARY_USER_EMAIL}. Please sign in to the dashboard to reconnect Google Drive.")
+                
+                # Recreate service with fresh token and retry upload
+                service = get_drive_service(access_token, refresh_token, auto_refresh=True)
+                
+                # Recreate media object (it may have been partially consumed)
+                media = MediaInMemoryUpload(
+                    file_data,
+                    mimetype=mime_type,
+                    resumable=True
+                )
+                
+                # Retry the upload
+                file = service.files().create(
+                    body=file_metadata,
+                    media_body=media,
+                    fields='id, name, webViewLink, webContentLink',
+                    supportsAllDrives=True
+                ).execute()
+            else:
+                # Re-raise non-auth errors
+                raise
         
         logger.info(f"Successfully uploaded file to Google Drive: {new_filename} in folder: {matched_folder['name'] if matched_folder else 'Unknown'}")
         
