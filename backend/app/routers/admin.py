@@ -39,12 +39,13 @@ class EmailTrace(BaseModel):
 
 
 @router.get("/traces", response_model=List[EmailTrace])
-async def get_email_traces(limit: int = 50):
+async def get_email_traces(limit: int = 50, user_email: Optional[str] = None):
     """
     Fetch and parse LangSmith traces for email processing workflow.
 
     Args:
         limit: Maximum number of traces to return (default: 50)
+        user_email: Filter traces by user email (matches against project_name in proposals)
 
     Returns:
         List of structured EmailTrace objects
@@ -72,6 +73,38 @@ async def get_email_traces(limit: int = 50):
         for run in runs:
             try:
                 trace = parse_trace(run)
+
+                # Filter by user_email if provided
+                if user_email:
+                    # Check if any attachment matches a project for this user
+                    if trace.attachments_analyzed:
+                        # Get user's projects from Supabase
+                        from app.utils.google_drive import get_supabase_service_client
+                        supabase = get_supabase_service_client()
+
+                        # Get user_id from email
+                        profile_response = supabase.table('profiles').select('id').eq('email', user_email).execute()
+                        if not profile_response.data:
+                            continue  # Skip if user not found
+
+                        user_id = profile_response.data[0]['id']
+
+                        # Get user's project names
+                        projects_response = supabase.table('projects').select('name').eq('user_id', user_id).execute()
+                        user_projects = {p['name'] for p in projects_response.data} if projects_response.data else set()
+
+                        # Check if any attachment matches user's projects
+                        has_match = any(
+                            att.get('project_name') in user_projects
+                            for att in trace.attachments_analyzed
+                        )
+
+                        if not has_match:
+                            continue  # Skip this trace
+                    else:
+                        # No attachments analyzed, skip this trace when filtering by user
+                        continue
+
                 traces.append(trace)
             except Exception as e:
                 # If we can't parse a trace, add it with error info
