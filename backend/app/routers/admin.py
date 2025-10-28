@@ -76,7 +76,12 @@ async def get_email_traces(limit: int = 50, user_email: Optional[str] = None):
 
                 # Filter by user_email if provided
                 if user_email:
-                    # Check if any attachment matches a project for this user
+                    # ALWAYS show errors - never filter them out
+                    if trace.status == "error":
+                        traces.append(trace)
+                        continue
+
+                    # For non-error traces, check if any attachment matches a project for this user
                     if trace.attachments_analyzed:
                         # Get user's projects from Supabase
                         from app.utils.google_drive import get_supabase_service_client
@@ -108,6 +113,7 @@ async def get_email_traces(limit: int = 50, user_email: Optional[str] = None):
                 traces.append(trace)
             except Exception as e:
                 # If we can't parse a trace, add it with error info
+                # ALWAYS show parse errors
                 traces.append(EmailTrace(
                     trace_id=str(run.id),
                     timestamp=run.start_time.isoformat() if run.start_time else "",

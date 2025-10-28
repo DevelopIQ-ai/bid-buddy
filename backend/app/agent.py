@@ -194,10 +194,19 @@ async def email_analysis_node(state: EmailProcessingState) -> EmailProcessingSta
     all_thread_attachments = []
 
     # Fetch complete thread with all messages
-    thread = client.inboxes.threads.get(
-        inbox_id=inbox_id,
-        thread_id=thread_id
-    )
+    try:
+        thread = client.inboxes.threads.get(
+            inbox_id=inbox_id,
+            thread_id=thread_id
+        )
+    except Exception as e:
+        # If thread fetch fails, log the error and return default classification
+        logger.error(f"Failed to fetch thread {thread_id} from inbox {inbox_id}: {str(e)}")
+        return {
+            "bid_proposal_included": False,
+            "should_forward": False,
+            "error": f"Failed to fetch email thread: {str(e)}"
+        }
 
     # Collect all messages and attachments from entire thread
     for msg in thread.messages:
@@ -405,10 +414,19 @@ async def analyze_attachment_node(state: EmailProcessingState) -> EmailProcessin
     all_attachments_to_process = []
 
     # Fetch complete thread to get ALL attachments
-    thread = client.inboxes.threads.get(
-        inbox_id=inbox_id,
-        thread_id=thread_id
-    )
+    try:
+        thread = client.inboxes.threads.get(
+            inbox_id=inbox_id,
+            thread_id=thread_id
+        )
+    except Exception as e:
+        # If thread fetch fails, return error state
+        logger.error(f"Failed to fetch thread {thread_id} for attachment analysis: {str(e)}")
+        return {
+            "proposals": [],
+            "total_count": 0,
+            "error": f"Failed to fetch email thread for attachment analysis: {str(e)}"
+        }
 
     # Iterate through all messages in thread
     for msg in thread.messages:
