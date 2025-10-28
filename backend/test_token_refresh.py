@@ -150,7 +150,7 @@ def main():
         "GOOGLE_CLIENT_ID",
         "GOOGLE_CLIENT_SECRET",
         "SUPABASE_URL",
-        "SUPABASE_SERVICE_ROLE_KEY"
+        "SUPABASE_ANON_KEY"  # Changed to use anon key since service role key falls back to it
     ]
     
     missing_vars = []

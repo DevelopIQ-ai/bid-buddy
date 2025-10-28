@@ -362,6 +362,10 @@ async def sync_buildingconnected_emails(
     Looks for emails from team@buildingconnected.com with subject "Proposal Submitted - ..."
     """
     try:
+        import os
+        from agentmail import AgentMail
+        from app.utils.building_connected_email_extractor import BuildingConnectedEmailExtractor
+        
         supabase = get_supabase_client(user['access_token'])
         
         # Get project details
@@ -374,11 +378,95 @@ async def sync_buildingconnected_emails(
         
         project = project_response.data[0]
         
-        # Get BuildingConnected emails from document_extractions
-        # These should have been processed when emails came in
-        bc_extractions = supabase.table('document_extractions').select('*').eq(
-            'project_name', project['name']
-        ).execute()
+        # Initialize AgentMail to fetch BuildingConnected emails
+        client = AgentMail(api_key=os.getenv("AGENTMAIL_API_KEY"))
+        
+        # Use the specific bids inbox for BuildingConnected emails
+        # This is where all bid-related emails are collected
+        inbox_id = os.getenv("AGENTMAIL_INBOX_ID")
+        if not inbox_id:
+            raise HTTPException(status_code=500, detail="PRIMARY_USER_EMAIL not set")
+        inbox_id = inbox_id.strip()
+        
+        logger.info(f"Using inbox_id: {inbox_id} for BuildingConnected sync")
+        
+        # Fetch recent messages and filter for BuildingConnected emails
+        # AgentMail doesn't support query parameter, so we need to filter manually
+        try:
+            messages_iter = client.inboxes.messages.list(
+                inbox_id=inbox_id,
+                limit=200  # Fetch more messages to ensure we get BuildingConnected emails
+            )
+            
+            # Filter for BuildingConnected emails with correct subject format
+            messages = []
+            for msg in messages_iter:
+                # Check if from BuildingConnected and has correct subject prefix
+                if (msg.from_ and 'buildingconnected.com' in msg.from_.lower() and
+                    msg.subject and msg.subject.startswith("Proposal Submitted - ")):
+                    messages.append(msg)
+                    
+            logger.info(f"Found {len(messages)} BuildingConnected emails to process")
+            
+        except Exception as e:
+            logger.error(f"Error fetching BuildingConnected emails: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to fetch emails: {str(e)}")
+        
+        # Process each email to extract company and trade information
+        bc_extractions = []
+        extractor = BuildingConnectedEmailExtractor()
+        
+        # Import fuzzy matching
+        from difflib import SequenceMatcher
+        
+        for message in messages:
+            try:
+                # Subject already checked in filtering above
+                # Get full message content using message_id attribute
+                full_message = client.inboxes.messages.get(
+                    inbox_id=inbox_id,
+                    message_id=message.message_id
+                )
+                
+                email_data = {
+                    "subject": full_message.subject,
+                    "html": full_message.html_body or "",
+                    "text": full_message.text_body or "",
+                    "from_": full_message.from_email
+                }
+                
+                # Extract data from email
+                extracted = extractor.process_buildingconnected_email(email_data)
+                
+                if extracted.get('success'):
+                    # Extract project name from subject
+                    email_project_name = extracted.get('project_name')
+                    
+                    # Fuzzy match against current project name
+                    if email_project_name:
+                        similarity = SequenceMatcher(None, 
+                                                   project['name'].lower(), 
+                                                   email_project_name.lower()).ratio()
+                        
+                        # Only include if similarity is above threshold (0.7 = 70% match)
+                        if similarity >= 0.7:
+                            logger.info(f"Including BuildingConnected email for project '{email_project_name}' "
+                                      f"(matched '{project['name']}' with {similarity:.0%} confidence)")
+                            
+                            bc_extractions.append({
+                                'company_name': extracted.get('company_name'),
+                                'trade': extracted.get('trade'),
+                                'project_name': email_project_name,
+                                'attachment_url': message.message_id,  # Use message ID as reference
+                                'is_bid_proposal': True,
+                                'similarity_score': similarity
+                            })
+                        else:
+                            logger.debug(f"Skipping BuildingConnected email for project '{email_project_name}' "
+                                       f"(low match with '{project['name']}': {similarity:.0%})")
+            except Exception as e:
+                logger.error(f"Error processing BuildingConnected email {message.message_id}: {e}")
+                continue
         
         # Get existing proposals for this project
         existing_proposals = supabase.table('proposals').select(
@@ -403,7 +491,7 @@ async def sync_buildingconnected_emails(
         errors = []
         
         # Process each BuildingConnected extraction
-        for extraction in bc_extractions.data:
+        for extraction in bc_extractions:
             company_name = extraction.get('company_name')
             trade_name = extraction.get('trade')
             attachment_url = extraction.get('attachment_url')
