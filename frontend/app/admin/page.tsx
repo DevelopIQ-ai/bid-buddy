@@ -41,6 +41,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedTrace, setSelectedTrace] = useState<string | null>(null)
+  const [userFilter, setUserFilter] = useState<string>('jessica@vanbruntco.com') // Default to Jessica
 
   useEffect(() => {
     fetchTraces()
@@ -48,7 +49,11 @@ export default function AdminPage() {
 
   const fetchTraces = async () => {
     try {
-      const response = await fetch('http://localhost:8000/admin/traces?limit=50')
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const url = userFilter
+        ? `${apiUrl}/admin/traces?limit=50&user_email=${encodeURIComponent(userFilter)}`
+        : `${apiUrl}/admin/traces?limit=50`
+      const response = await fetch(url)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -128,21 +133,51 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Email Agent Traces</h1>
-          <div className="flex gap-4">
-            <Link
-              href="/"
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-            >
-              ← Back to Dashboard
-            </Link>
-            <button
-              onClick={fetchTraces}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Refresh
-            </button>
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-3xl font-bold">Email Agent Traces</h1>
+            <div className="flex gap-4">
+              <Link
+                href="/"
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+              >
+                ← Back to Dashboard
+              </Link>
+              <button
+                onClick={fetchTraces}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          {/* User Filter */}
+          <div className="bg-white rounded-lg shadow p-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Filter by User
+            </label>
+            <div className="flex gap-2">
+              <select
+                value={userFilter}
+                onChange={(e) => {
+                  setUserFilter(e.target.value)
+                  setLoading(true)
+                }}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Users</option>
+                <option value="jessica@vanbruntco.com">Jessica (jessica@vanbruntco.com)</option>
+                <option value="evan@developiq.ai">Evan (evan@developiq.ai)</option>
+                <option value="kush@developiq.ai">Kush (kush@developiq.ai)</option>
+              </select>
+              <button
+                onClick={fetchTraces}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Apply Filter
+              </button>
+            </div>
           </div>
         </div>
 

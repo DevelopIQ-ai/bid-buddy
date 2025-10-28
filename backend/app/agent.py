@@ -194,10 +194,19 @@ async def email_analysis_node(state: EmailProcessingState) -> EmailProcessingSta
     all_thread_attachments = []
 
     # Fetch complete thread with all messages
-    thread = client.inboxes.threads.get(
-        inbox_id=inbox_id,
-        thread_id=thread_id
-    )
+    try:
+        thread = client.inboxes.threads.get(
+            inbox_id=inbox_id,
+            thread_id=thread_id
+        )
+    except Exception as e:
+        # If thread fetch fails, log the error and return default classification
+        logger.error(f"Failed to fetch thread {thread_id} from inbox {inbox_id}: {str(e)}")
+        return {
+            "bid_proposal_included": False,
+            "should_forward": False,
+            "error": f"Failed to fetch email thread: {str(e)}"
+        }
 
     # Collect all messages and attachments from entire thread
     for msg in thread.messages:
@@ -207,13 +216,13 @@ async def email_analysis_node(state: EmailProcessingState) -> EmailProcessingSta
             "subject": msg.subject,
             "text": msg.text[:500] if msg.text else "",
             "timestamp": str(msg.timestamp),
-            "attachments": [getattr(att, 'filename', '') for att in msg_attachments]
+            "attachments": [getattr(att, 'filename', '') or '' for att in msg_attachments]
         })
 
         # Collect all attachments from this message
         for att in msg_attachments:
-            filename = getattr(att, 'filename', '')
-            if filename.lower().endswith(('.pdf', '.docx', '.doc')):
+            filename = getattr(att, 'filename', '') or ''
+            if filename and filename.lower().endswith(('.pdf', '.docx', '.doc')):
                 all_thread_attachments.append({
                     "filename": filename,
                     "message_id": msg.message_id,
@@ -405,17 +414,26 @@ async def analyze_attachment_node(state: EmailProcessingState) -> EmailProcessin
     all_attachments_to_process = []
 
     # Fetch complete thread to get ALL attachments
-    thread = client.inboxes.threads.get(
-        inbox_id=inbox_id,
-        thread_id=thread_id
-    )
+    try:
+        thread = client.inboxes.threads.get(
+            inbox_id=inbox_id,
+            thread_id=thread_id
+        )
+    except Exception as e:
+        # If thread fetch fails, return error state
+        logger.error(f"Failed to fetch thread {thread_id} for attachment analysis: {str(e)}")
+        return {
+            "proposals": [],
+            "total_count": 0,
+            "error": f"Failed to fetch email thread for attachment analysis: {str(e)}"
+        }
 
     # Iterate through all messages in thread
     for msg in thread.messages:
         msg_attachments = msg.attachments or []
         for att in msg_attachments:
-            filename = getattr(att, 'filename', '')
-            if filename.lower().endswith(('.pdf', '.docx', '.doc')):
+            filename = getattr(att, 'filename', '') or ''
+            if filename and filename.lower().endswith(('.pdf', '.docx', '.doc')):
                 all_attachments_to_process.append({
                     "attachment_id": getattr(att, 'attachment_id', None),
                     "filename": filename,
