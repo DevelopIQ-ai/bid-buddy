@@ -402,7 +402,7 @@ async def sync_buildingconnected_emails(
             messages = []
             for msg in messages_iter:
                 # Check if from BuildingConnected and has correct subject prefix
-                if (msg.from_ and 'buildingconnected.com' in msg.from_.lower() and
+                if (msg.from and 'buildingconnected.com' in msg.from.lower() and
                     msg.subject and msg.subject.startswith("Proposal Submitted - ")):
                     messages.append(msg)
                     
@@ -430,9 +430,9 @@ async def sync_buildingconnected_emails(
                 
                 email_data = {
                     "subject": full_message.subject,
-                    "html": full_message.html_body or "",
-                    "text": full_message.text_body or "",
-                    "from_": full_message.from_email
+                    "html": getattr(full_message, 'html', '') or "",
+                    "text": getattr(full_message, 'text', '') or "",
+                    "from_": getattr(full_message, 'from', '')
                 }
                 
                 # Extract data from email
