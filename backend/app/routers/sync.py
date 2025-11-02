@@ -402,7 +402,8 @@ async def sync_buildingconnected_emails(
             messages = []
             for msg in messages_iter:
                 # Check if from BuildingConnected and has correct subject prefix
-                if (msg.from and 'buildingconnected.com' in msg.from.lower() and
+                msg_from = getattr(msg, 'from', None)
+                if (msg_from and 'buildingconnected.com' in msg_from.lower() and
                     msg.subject and msg.subject.startswith("Proposal Submitted - ")):
                     messages.append(msg)
                     
