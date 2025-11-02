@@ -424,8 +424,28 @@ def upload_attachment_to_drive(
         if project_name and drive_root_folder_id:
             matched_folder = find_best_matching_folder(service, drive_root_folder_id, project_name)
             if matched_folder:
-                folder_id = matched_folder['id']
-                logger.info(f"Using matched folder '{matched_folder['name']}' for project: {project_name}")
+                # Look for existing "Sub Bids" folder within the project folder
+                project_folder_id = matched_folder['id']
+                
+                # Search for "Sub Bids" folder in project folder
+                query = f"'{project_folder_id}' in parents and name='Sub Bids' and mimeType='application/vnd.google-apps.folder' and trashed=false"
+                results = service.files().list(
+                    q=query,
+                    fields='files(id, name)',
+                    supportsAllDrives=True,
+                    includeItemsFromAllDrives=True
+                ).execute()
+                
+                sub_bids_folders = results.get('files', [])
+                
+                if sub_bids_folders:
+                    # Use existing "Sub Bids" folder
+                    folder_id = sub_bids_folders[0]['id']
+                    logger.info(f"Found and using 'Sub Bids' folder in project '{matched_folder['name']}'")
+                else:
+                    # No "Sub Bids" folder found - use project folder directly
+                    folder_id = project_folder_id
+                    logger.warning(f"'Sub Bids' folder not found in project '{matched_folder['name']}', using project folder directly")
             else:
                 # If no match found, create or use "Uncertain Bids" folder
                 logger.warning(f"No matching folder found for project '{project_name}', checking for Uncertain Bids folder")
