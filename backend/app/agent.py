@@ -6,7 +6,7 @@ from dedalus_labs import AsyncDedalus, DedalusRunner
 from dotenv import load_dotenv
 from agentmail import AgentMail
 from app.utils.reducto import extract_from_file
-from app.utils.google_drive import upload_attachment_to_drive, get_supabase_service_client
+from app.utils.google_drive import upload_attachment_to_drive_with_retry, get_supabase_service_client
 from app.utils.building_connected_email_extractor import (
     BuildingConnectedEmailExtractor,
     should_process_buildingconnected
@@ -315,6 +315,8 @@ async def forward_email_node(state: EmailProcessingState) -> EmailProcessingStat
     message_data = state["message_data"]
     forward_to = os.getenv("FORWARD_EMAIL_ADDRESS")
     inbox_id = message_data.get('inbox_id')
+    message_id = message_data.get('message_id')
+    thread_id = message_data.get('thread_id')
 
     if not forward_to:
         print("[ERROR] FORWARD_EMAIL_ADDRESS not set in environment")
@@ -326,6 +328,20 @@ async def forward_email_node(state: EmailProcessingState) -> EmailProcessingStat
     client = AgentMail(api_key=os.getenv("AGENTMAIL_API_KEY"))
 
     try:
+        # First check if this thread already has the "forwarded" label
+        thread = client.inboxes.threads.get(
+            inbox_id=inbox_id,
+            thread_id=thread_id
+        )
+        
+        # Check if thread already has the "forwarded" label
+        if thread.labels and "forwarded" in thread.labels:
+            print(f"[INFO] Thread {thread_id} already forwarded, skipping")
+            return {
+                "forward_status": "already_forwarded",
+                "forward_message_id": "skipped"
+            }
+        
         # Forward using AgentMail send
         result = client.inboxes.messages.send(
             inbox_id=inbox_id,
@@ -333,6 +349,17 @@ async def forward_email_node(state: EmailProcessingState) -> EmailProcessingStat
             subject=f"[Action Required] {message_data.get('subject', 'No Subject')}",
             text=f"This email requires your attention:\n\n{message_data.get('text', '')}"
         )
+
+        # Add "forwarded" label to the thread to prevent duplicate forwarding
+        try:
+            client.inboxes.threads.update(
+                inbox_id=inbox_id,
+                thread_id=thread_id,
+                labels=["forwarded"] + (thread.labels or [])
+            )
+            print(f"[INFO] Added 'forwarded' label to thread {thread_id}")
+        except Exception as label_error:
+            print(f"[WARNING] Failed to add label to thread: {label_error}")
 
         print(f"[INFO] Email forwarded to {forward_to}")
         return {
@@ -419,6 +446,15 @@ async def analyze_attachment_node(state: EmailProcessingState) -> EmailProcessin
             inbox_id=inbox_id,
             thread_id=thread_id
         )
+        
+        # Check if thread already has the "bids_processed" label
+        if thread.labels and "bids_processed" in thread.labels:
+            print(f"[INFO] Thread {thread_id} bids already processed, skipping")
+            return {
+                "proposals": [],
+                "total_count": 0,
+                "status": "already_processed"
+            }
     except Exception as e:
         # If thread fetch fails, return error state
         logger.error(f"Failed to fetch thread {thread_id} for attachment analysis: {str(e)}")
@@ -428,20 +464,34 @@ async def analyze_attachment_node(state: EmailProcessingState) -> EmailProcessin
             "error": f"Failed to fetch email thread for attachment analysis: {str(e)}"
         }
 
+    # Use a set to track unique attachments (by attachment_id and message_id)
+    seen_attachments = set()
+    
     # Iterate through all messages in thread
     for msg in thread.messages:
         msg_attachments = msg.attachments or []
         for att in msg_attachments:
             filename = getattr(att, 'filename', '') or ''
             if filename and filename.lower().endswith(('.pdf', '.docx', '.doc')):
-                all_attachments_to_process.append({
-                    "attachment_id": getattr(att, 'attachment_id', None),
-                    "filename": filename,
-                    "message_id": msg.message_id,
-                    "from": msg.from_
-                })
+                attachment_id = getattr(att, 'attachment_id', None)
+                message_id = msg.message_id
+                
+                # Create unique key for deduplication
+                unique_key = (attachment_id, message_id)
+                
+                # Only add if we haven't seen this attachment before
+                if unique_key not in seen_attachments:
+                    seen_attachments.add(unique_key)
+                    all_attachments_to_process.append({
+                        "attachment_id": attachment_id,
+                        "filename": filename,
+                        "message_id": message_id,
+                        "from": msg.from_
+                    })
+                else:
+                    print(f"[INFO] Skipping duplicate attachment: {filename} (attachment_id: {attachment_id}, message_id: {message_id})")
 
-    print(f"[INFO] Processing {len(all_attachments_to_process)} attachments from entire thread")
+    print(f"[INFO] Processing {len(all_attachments_to_process)} unique attachments from entire thread")
 
     # Process each attachment from the thread
     for attachment in all_attachments_to_process:
@@ -485,7 +535,7 @@ async def analyze_attachment_node(state: EmailProcessingState) -> EmailProcessin
             drive_upload_result = None
             if is_bid_proposal and company_name and trade:
                 try:
-                    drive_upload_result = upload_attachment_to_drive(
+                    drive_upload_result = upload_attachment_to_drive_with_retry(
                         file_data=file_data,
                         original_filename=filename,
                         company_name=company_name,
@@ -529,6 +579,18 @@ async def analyze_attachment_node(state: EmailProcessingState) -> EmailProcessin
                 "status": "error"
             })
 
+    # Add "bids_processed" label to the thread if we processed any bids
+    if proposals and any(p.get("is_bid_proposal") for p in proposals):
+        try:
+            client.inboxes.threads.update(
+                inbox_id=inbox_id,
+                thread_id=thread_id,
+                labels=["bids_processed"] + (thread.labels or [])
+            )
+            print(f"[INFO] Added 'bids_processed' label to thread {thread_id}")
+        except Exception as label_error:
+            print(f"[WARNING] Failed to add label to thread: {label_error}")
+    
     return {
         "proposals": proposals,
         "total_count": len(proposals)
