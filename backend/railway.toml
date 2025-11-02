@@ -1,5 +1,6 @@
 [build]
 builder = "nixpacks"
+nixpacksPlan = { providers = ["python"] }
 buildCommand = "pip install --upgrade pip && pip install -r requirements.txt"
 
 [deploy]
