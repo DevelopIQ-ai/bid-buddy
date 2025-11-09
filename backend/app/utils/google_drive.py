@@ -5,12 +5,69 @@ from google.auth.transport.requests import Request
 import logging
 import os
 import mimetypes
-from typing import Optional, Dict, Any, List, Tuple
+from typing import Optional, Dict, Any, List, Tuple, Callable, TypeVar
 from difflib import SequenceMatcher
 from supabase import create_client, Client
 from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
+
+T = TypeVar("T")
+
+
+def is_authentication_error(error: Exception) -> bool:
+    """Determine if a Google API exception is related to authentication."""
+    error_str = str(error).lower()
+    return any(keyword in error_str for keyword in [
+        '401',
+        'unauthorized',
+        'invalid credentials',
+        'token has been expired',
+        'expired or revoked',
+        'invalid_grant',
+    ])
+
+
+def update_tokens_in_db(email: Optional[str], access_token: str, refresh_token: Optional[str] = None) -> None:
+    """Persist refreshed tokens to Supabase."""
+    if not email:
+        return
+
+    try:
+        supabase = get_supabase_service_client()
+        update_data: Dict[str, Any] = {'google_access_token': access_token}
+        if refresh_token:
+            update_data['google_refresh_token'] = refresh_token
+        supabase.table('profiles').update(update_data).eq('email', email).execute()
+        logger.info(f"Persisted refreshed Google token for {email}")
+    except Exception as e:
+        logger.error(f"Failed to persist refreshed Google token for {email}: {e}")
+
+
+def execute_drive_operation(
+    operation: Callable[[], T],
+    refresh_service_callback: Optional[Callable[[], Any]] = None,
+    description: str = "Google Drive operation"
+) -> T:
+    """Execute a Google Drive API call with automatic token refresh retry."""
+    attempts = 2 if refresh_service_callback else 1
+
+    for attempt in range(attempts):
+        try:
+            return operation()
+        except Exception as e:
+            should_retry = (
+                attempt < attempts - 1 and
+                refresh_service_callback is not None and
+                is_authentication_error(e)
+            )
+
+            if should_retry:
+                logger.info(f"Authentication error during {description}, attempting token refresh: {e}")
+                refresh_service_callback()
+                continue
+
+            raise
 
 
 def get_supabase_service_client() -> Client:
@@ -123,7 +180,13 @@ def refresh_and_update_token(email: str) -> Tuple[Optional[str], Optional[str]]:
         return None, None
 
 
-def get_drive_service(access_token: str, refresh_token: Optional[str] = None, auto_refresh: bool = True):
+def get_drive_service(
+    access_token: str,
+    refresh_token: Optional[str] = None,
+    auto_refresh: bool = True,
+    profile_email: Optional[str] = None,
+    on_refresh: Optional[Callable[[str, Optional[str]], None]] = None
+):
     """
     Build Google Drive service with credentials that support auto-refresh.
 
@@ -131,6 +194,8 @@ def get_drive_service(access_token: str, refresh_token: Optional[str] = None, au
         access_token: Google OAuth access token
         refresh_token: Google OAuth refresh token (optional, but required for auto-refresh)
         auto_refresh: Whether to automatically refresh expired tokens (default: True)
+        profile_email: Email used to persist refreshed tokens (optional)
+        on_refresh: Callback invoked with updated (access_token, refresh_token) after refresh
 
     Returns:
         Google Drive service instance
@@ -154,6 +219,9 @@ def get_drive_service(access_token: str, refresh_token: Optional[str] = None, au
             try:
                 credentials.refresh(Request())
                 logger.info("Successfully refreshed access token")
+                update_tokens_in_db(profile_email, credentials.token, credentials.refresh_token)
+                if on_refresh:
+                    on_refresh(credentials.token, credentials.refresh_token)
                 
                 # Optionally update the token in database (if we have user context)
                 # This would need to be handled by the caller
@@ -170,7 +238,12 @@ def get_drive_service(access_token: str, refresh_token: Optional[str] = None, au
     return service
 
 
-def find_best_matching_folder(service, parent_folder_id: str, project_name: str) -> Optional[Dict[str, str]]:
+def find_best_matching_folder(
+    service,
+    parent_folder_id: str,
+    project_name: str,
+    refresh_service_callback: Optional[Callable[[], Any]] = None
+) -> Optional[Dict[str, str]]:
     """
     Find the best matching folder within the parent folder based on project name similarity.
     
@@ -186,24 +259,33 @@ def find_best_matching_folder(service, parent_folder_id: str, project_name: str)
         # List all folders in the parent folder
         query = f"'{parent_folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
         
-        try:
-            results = service.files().list(
-                q=query,
-                fields='files(id, name)',
-                pageSize=100,
-                supportsAllDrives=True,
-                includeItemsFromAllDrives=True
-            ).execute()
-        except Exception as e:
-            # Check if it's an authentication error
-            error_str = str(e)
-            if '401' in error_str or 'unauthorized' in error_str.lower():
-                logger.warning(f"Authentication error in find_best_matching_folder, service may need refresh: {e}")
-                # The caller should handle token refresh
-                raise
-            else:
+        attempts = 2 if refresh_service_callback else 1
+        results: Optional[Dict[str, Any]] = None
+
+        for attempt in range(attempts):
+            try:
+                results = service.files().list(
+                    q=query,
+                    fields='files(id, name)',
+                    pageSize=100,
+                    supportsAllDrives=True,
+                    includeItemsFromAllDrives=True
+                ).execute()
+                break
+            except Exception as e:
+                is_auth_error = is_authentication_error(e)
+
+                if attempt < attempts - 1 and is_auth_error and refresh_service_callback:
+                    logger.info(f"Authentication error in find_best_matching_folder, attempting service refresh: {e}")
+                    service = refresh_service_callback()
+                    continue
+
                 raise
         
+        if results is None:
+            logger.error(f"Failed to retrieve folders for parent {parent_folder_id}")
+            return None
+
         folders = results.get('files', [])
         
         if not folders:
@@ -391,19 +473,45 @@ def upload_attachment_to_drive(
 
         logger.info(f"Using Google Drive root folder: {drive_root_folder_id}")
 
+        service = None
+
+        def on_service_refresh(new_access_token: str, new_refresh_token: Optional[str]) -> None:
+            nonlocal access_token, refresh_token
+            if new_access_token:
+                access_token = new_access_token
+            if new_refresh_token:
+                refresh_token = new_refresh_token
+
+        def build_service() -> Any:
+            return get_drive_service(
+                access_token,
+                refresh_token,
+                auto_refresh=True,
+                profile_email=PRIMARY_USER_EMAIL,
+                on_refresh=on_service_refresh
+            )
+
         # Create Drive service with auto-refresh capability
         try:
-            service = get_drive_service(access_token, refresh_token, auto_refresh=True)
+            service = build_service()
         except Exception as e:
             # If initial service creation fails, try to refresh token
             logger.warning(f"Initial Drive service creation failed: {e}, attempting token refresh")
             access_token, refresh_token = refresh_and_update_token(PRIMARY_USER_EMAIL)
-            
+
             if not access_token:
                 raise RuntimeError(f"Failed to refresh Google token for {PRIMARY_USER_EMAIL}. Please sign in to the dashboard to reconnect Google Drive.")
-            
+
             # Try again with refreshed token
-            service = get_drive_service(access_token, refresh_token, auto_refresh=True)
+            service = build_service()
+
+        def refresh_service():
+            nonlocal access_token, refresh_token, service
+            access_token, refresh_token = refresh_and_update_token(PRIMARY_USER_EMAIL)
+            if not access_token:
+                raise RuntimeError(f"Failed to refresh Google token for {PRIMARY_USER_EMAIL}. Please sign in to the dashboard to reconnect Google Drive.")
+            service = build_service()
+            return service
         
         # Extract file extension from original filename
         _, extension = os.path.splitext(original_filename)
@@ -422,19 +530,28 @@ def upload_attachment_to_drive(
         matched_folder = None
         
         if project_name and drive_root_folder_id:
-            matched_folder = find_best_matching_folder(service, drive_root_folder_id, project_name)
+            matched_folder = find_best_matching_folder(
+                service,
+                drive_root_folder_id,
+                project_name,
+                refresh_service_callback=refresh_service
+            )
             if matched_folder:
                 # Look for existing "Sub Bids" folder within the project folder
                 project_folder_id = matched_folder['id']
                 
                 # Search for "Sub Bids" folder in project folder
                 query = f"'{project_folder_id}' in parents and name='Sub Bids' and mimeType='application/vnd.google-apps.folder' and trashed=false"
-                results = service.files().list(
-                    q=query,
-                    fields='files(id, name)',
-                    supportsAllDrives=True,
-                    includeItemsFromAllDrives=True
-                ).execute()
+                results = execute_drive_operation(
+                    lambda: service.files().list(
+                        q=query,
+                        fields='files(id, name)',
+                        supportsAllDrives=True,
+                        includeItemsFromAllDrives=True
+                    ).execute(),
+                    refresh_service_callback=refresh_service,
+                    description="listing 'Sub Bids' folder"
+                )
                 
                 sub_bids_folders = results.get('files', [])
                 
@@ -452,12 +569,16 @@ def upload_attachment_to_drive(
                 
                 # Check if "Uncertain Bids" folder exists in root folder
                 query = f"'{drive_root_folder_id}' in parents and name='Uncertain Bids' and mimeType='application/vnd.google-apps.folder' and trashed=false"
-                results = service.files().list(
-                    q=query,
-                    fields='files(id, name)',
-                    supportsAllDrives=True,
-                    includeItemsFromAllDrives=True
-                ).execute()
+                results = execute_drive_operation(
+                    lambda: service.files().list(
+                        q=query,
+                        fields='files(id, name)',
+                        supportsAllDrives=True,
+                        includeItemsFromAllDrives=True
+                    ).execute(),
+                    refresh_service_callback=refresh_service,
+                    description="listing 'Uncertain Bids' folder"
+                )
                 
                 uncertain_folders = results.get('files', [])
                 
@@ -473,11 +594,15 @@ def upload_attachment_to_drive(
                         'mimeType': 'application/vnd.google-apps.folder',
                         'parents': [drive_root_folder_id]
                     }
-                    folder = service.files().create(
-                        body=folder_metadata,
-                        fields='id, name',
-                        supportsAllDrives=True
-                    ).execute()
+                    folder = execute_drive_operation(
+                        lambda: service.files().create(
+                            body=folder_metadata,
+                            fields='id, name',
+                            supportsAllDrives=True
+                        ).execute(),
+                        refresh_service_callback=refresh_service,
+                        description="creating 'Uncertain Bids' folder"
+                    )
                     folder_id = folder.get('id')
                     matched_folder = {'id': folder_id, 'name': 'Uncertain Bids'}
                     logger.info("Created new 'Uncertain Bids' folder")
@@ -487,12 +612,16 @@ def upload_attachment_to_drive(
             
             # Check if "Uncertain Bids" folder exists
             query = f"'{drive_root_folder_id}' in parents and name='Uncertain Bids' and mimeType='application/vnd.google-apps.folder' and trashed=false"
-            results = service.files().list(
-                q=query,
-                fields='files(id, name)',
-                supportsAllDrives=True,
-                includeItemsFromAllDrives=True
-            ).execute()
+            results = execute_drive_operation(
+                lambda: service.files().list(
+                    q=query,
+                    fields='files(id, name)',
+                    supportsAllDrives=True,
+                    includeItemsFromAllDrives=True
+                ).execute(),
+                refresh_service_callback=refresh_service,
+                description="listing 'Uncertain Bids' folder"
+            )
             
             uncertain_folders = results.get('files', [])
             
@@ -506,11 +635,15 @@ def upload_attachment_to_drive(
                     'mimeType': 'application/vnd.google-apps.folder',
                     'parents': [drive_root_folder_id]
                 }
-                folder = service.files().create(
-                    body=folder_metadata,
-                    fields='id, name',
-                    supportsAllDrives=True
-                ).execute()
+                folder = execute_drive_operation(
+                    lambda: service.files().create(
+                        body=folder_metadata,
+                        fields='id, name',
+                        supportsAllDrives=True
+                    ).execute(),
+                    refresh_service_callback=refresh_service,
+                    description="creating 'Uncertain Bids' folder"
+                )
                 folder_id = folder.get('id')
                 matched_folder = {'id': folder_id, 'name': 'Uncertain Bids'}
         
@@ -527,51 +660,24 @@ def upload_attachment_to_drive(
             file_metadata['parents'] = [folder_id]
         
         # Upload file with retry on auth failure
-        media = MediaInMemoryUpload(
-            file_data,
-            mimetype=mime_type,
-            resumable=True
-        )
-        
-        try:
-            file = service.files().create(
+        def upload_file():
+            media = MediaInMemoryUpload(
+                file_data,
+                mimetype=mime_type,
+                resumable=True
+            )
+            return service.files().create(
                 body=file_metadata,
                 media_body=media,
                 fields='id, name, webViewLink, webContentLink',
                 supportsAllDrives=True
             ).execute()
-        except Exception as e:
-            # Check if it's an authentication error (401)
-            error_str = str(e)
-            if '401' in error_str or 'unauthorized' in error_str.lower() or 'invalid credentials' in error_str.lower():
-                logger.warning(f"Authentication error during upload, attempting token refresh: {e}")
-                
-                # Try to refresh the token
-                access_token, refresh_token = refresh_and_update_token(PRIMARY_USER_EMAIL)
-                
-                if not access_token:
-                    raise RuntimeError(f"Failed to refresh expired Google token for {PRIMARY_USER_EMAIL}. Please sign in to the dashboard to reconnect Google Drive.")
-                
-                # Recreate service with fresh token and retry upload
-                service = get_drive_service(access_token, refresh_token, auto_refresh=True)
-                
-                # Recreate media object (it may have been partially consumed)
-                media = MediaInMemoryUpload(
-                    file_data,
-                    mimetype=mime_type,
-                    resumable=True
-                )
-                
-                # Retry the upload
-                file = service.files().create(
-                    body=file_metadata,
-                    media_body=media,
-                    fields='id, name, webViewLink, webContentLink',
-                    supportsAllDrives=True
-                ).execute()
-            else:
-                # Re-raise non-auth errors
-                raise
+
+        file = execute_drive_operation(
+            upload_file,
+            refresh_service_callback=refresh_service,
+            description="uploading file"
+        )
         
         logger.info(f"Successfully uploaded file to Google Drive: {new_filename} in folder: {matched_folder['name'] if matched_folder else 'Unknown'}")
         
