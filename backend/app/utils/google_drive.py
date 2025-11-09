@@ -9,6 +9,7 @@ from typing import Optional, Dict, Any, List, Tuple, Callable, TypeVar
 from difflib import SequenceMatcher
 from supabase import create_client, Client
 from datetime import datetime, timezone
+from types import MethodType
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,30 @@ def update_tokens_in_db(email: Optional[str], access_token: str, refresh_token: 
         logger.info(f"Persisted refreshed Google token for {email}")
     except Exception as e:
         logger.error(f"Failed to persist refreshed Google token for {email}: {e}")
+
+
+def wrap_credentials_refresh(
+    credentials: Credentials,
+    profile_email: Optional[str],
+    on_refresh: Optional[Callable[[str, Optional[str]], None]]
+) -> None:
+    """Ensure any credential refresh persists new tokens and notifies callers."""
+    if not profile_email and not on_refresh:
+        return
+
+    original_refresh = credentials.refresh
+
+    def wrapped_refresh(self, request, *args, **kwargs):
+        original_refresh(request, *args, **kwargs)
+        try:
+            if profile_email:
+                update_tokens_in_db(profile_email, self.token, self.refresh_token)
+            if on_refresh:
+                on_refresh(self.token, self.refresh_token)
+        except Exception as e:
+            logger.error(f"Failed during credential refresh hook: {e}")
+
+    credentials.refresh = MethodType(wrapped_refresh, credentials)
 
 
 def execute_drive_operation(
@@ -212,6 +237,8 @@ def get_drive_service(
             client_id=client_id,
             client_secret=client_secret
         )
+
+        wrap_credentials_refresh(credentials, profile_email, on_refresh)
         
         # Check if token needs refresh
         if auto_refresh and not credentials.valid:
@@ -219,9 +246,6 @@ def get_drive_service(
             try:
                 credentials.refresh(Request())
                 logger.info("Successfully refreshed access token")
-                update_tokens_in_db(profile_email, credentials.token, credentials.refresh_token)
-                if on_refresh:
-                    on_refresh(credentials.token, credentials.refresh_token)
                 
                 # Optionally update the token in database (if we have user context)
                 # This would need to be handled by the caller
