@@ -5,7 +5,12 @@ import logging
 
 from app.utils.auth import get_current_user
 from app.utils.database import get_supabase_client
-from app.utils.google_drive import get_google_token, get_drive_service, refresh_and_update_token
+from app.utils.google_drive import (
+    get_google_token,
+    get_drive_service,
+    refresh_and_update_token,
+    get_supabase_service_client,
+)
 
 router = APIRouter(prefix="/api/drive", tags=["Google Drive"])
 logger = logging.getLogger(__name__)
@@ -103,33 +108,98 @@ async def sync_drive_folders(
         # Get Google access token and refresh token
         google_token_header = request.headers.get("x-google-token")
         google_refresh_token_header = request.headers.get("x-google-refresh-token")
+        google_token = None
+        google_refresh_token = None
+        profile_email = user.get('email')
+        supabase_service = None
 
         if not google_token_header:
             google_token = get_google_token(user['id'])
-            if not google_token:
+        else:
+            google_token = google_token_header
+
+        if google_refresh_token_header:
+            google_refresh_token = google_refresh_token_header
+
+        # If we still don't have tokens, try fetching from service role client
+        if not google_token or not google_refresh_token:
+            if supabase_service is None:
+                supabase_service = get_supabase_service_client()
+
+            profile_response = supabase_service.table('profiles').select(
+                'email, google_access_token, google_refresh_token'
+            ).eq('id', user['id']).execute()
+
+            profile = profile_response.data[0] if profile_response.data else None
+            if profile:
+                if not profile_email:
+                    profile_email = profile.get('email')
+                if not google_token:
+                    google_token = profile.get('google_access_token')
+                if not google_refresh_token:
+                    google_refresh_token = profile.get('google_refresh_token')
+
+        # If we have refresh token but access token missing, refresh before continuing
+        if not google_token and google_refresh_token and profile_email:
+            google_token, google_refresh_token = refresh_and_update_token(profile_email)
+            if google_token and supabase_service is None:
+                supabase_service = get_supabase_service_client()
+
+        if not google_token:
+            return {
+                "success": False,
+                "error": "Please reconnect Google Drive",
+                "added": 0,
+                "removed": 0,
+                "total": 0
+            }
+
+        # Persist header-provided tokens
+        if google_token_header:
+            update_data = {
+                'google_access_token': google_token
+            }
+            if google_refresh_token_header:
+                update_data['google_refresh_token'] = google_refresh_token
+            supabase.table('profiles').update(update_data).eq('id', user['id']).execute()
+
+        if not google_refresh_token:
+            logger.warning("No Google refresh token available; Drive sync may fail if token is expired.")
+
+        # Build Drive service
+        try:
+            service = get_drive_service(
+                google_token,
+                google_refresh_token,
+                auto_refresh=bool(google_refresh_token),
+                profile_email=profile_email
+            )
+        except Exception as e:
+            logger.error(f"Failed to create Drive service: {e}")
+            if google_refresh_token and profile_email:
+                google_token, google_refresh_token = refresh_and_update_token(profile_email)
+                if not google_token:
+                    return {
+                        "success": False,
+                        "error": "Failed to refresh Google Drive authentication. Please reconnect.",
+                        "added": 0,
+                        "removed": 0,
+                        "total": 0
+                    }
+                service = get_drive_service(
+                    google_token,
+                    google_refresh_token,
+                    auto_refresh=bool(google_refresh_token),
+                    profile_email=profile_email
+                )
+            else:
                 return {
                     "success": False,
-                    "error": "Please reconnect Google Drive",
+                    "error": "Google Drive authentication not available. Please reconnect.",
                     "added": 0,
                     "removed": 0,
                     "total": 0
                 }
-        else:
-            google_token = google_token_header
-
-            # Store both the access token and refresh token for future use
-            update_data = {
-                'google_access_token': google_token
-            }
-
-            # Only store refresh token if provided (it's optional but highly recommended)
-            if google_refresh_token_header:
-                update_data['google_refresh_token'] = google_refresh_token_header
-
-            supabase.table('profiles').update(update_data).eq('id', user['id']).execute()
-
-        # Build Drive service
-        service = get_drive_service(google_token)
 
         # List all folders in the root directory
         query = f"'{root_folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
