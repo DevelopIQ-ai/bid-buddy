@@ -1,11 +1,59 @@
 import { createClient } from '@/lib/supabase/client'
+import type { Session } from '@supabase/supabase-js'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const SESSION_EXPIRY_BUFFER_MS = 60_000 // Refresh 1 minute before Supabase JWT expiry
 
 class APIClient {
-  private getAuthHeaders = async (includeGoogleToken = false) => {
-    const supabase = createClient()
-    const { data: { session } } = await supabase.auth.getSession()
+  private supabase = createClient()
+  private refreshPromise: Promise<Session | null> | null = null
+
+  private isSessionExpiring(session: Session | null): boolean {
+    if (!session?.expires_at) return false
+    const expiryMs = session.expires_at * 1000
+    return expiryMs - Date.now() <= SESSION_EXPIRY_BUFFER_MS
+  }
+
+  private async refreshSupabaseSession(): Promise<Session | null> {
+    if (!this.refreshPromise) {
+      this.refreshPromise = (async () => {
+        const { data, error } = await this.supabase.auth.refreshSession()
+        if (error) {
+          throw new Error(error.message || 'Failed to refresh Supabase session')
+        }
+        return data.session ?? null
+      })()
+    }
+
+    try {
+      return await this.refreshPromise
+    } finally {
+      this.refreshPromise = null
+    }
+  }
+
+  private async getSession(forceRefresh = false): Promise<Session | null> {
+    if (forceRefresh) {
+      return this.refreshSupabaseSession()
+    }
+
+    const { data } = await this.supabase.auth.getSession()
+    let session = data.session ?? null
+
+    if (!session || this.isSessionExpiring(session)) {
+      session = await this.refreshSupabaseSession()
+    }
+
+    return session
+  }
+
+  private async getAuthHeaders(includeGoogleToken = false, forceRefresh = false): Promise<Record<string, string>> {
+    let session = await this.getSession(forceRefresh)
+
+    if (!session?.access_token) {
+      // Final attempt: force refresh before failing
+      session = await this.getSession(true)
+    }
 
     if (!session?.access_token) {
       throw new Error('No access token available')
@@ -16,11 +64,17 @@ class APIClient {
       'Content-Type': 'application/json',
     }
 
-    // Include Google tokens if requested and available
-    if (includeGoogleToken && session.provider_token) {
+    if (includeGoogleToken) {
+      if (!session.provider_token) {
+        session = await this.getSession(true)
+      }
+
+      if (!session?.provider_token) {
+        throw new Error('No Google provider token available. Please reconnect Google Drive.')
+      }
+
       headers['x-google-token'] = session.provider_token
 
-      // Also include refresh token if available (required for auto-refresh capability)
       if (session.provider_refresh_token) {
         headers['x-google-refresh-token'] = session.provider_refresh_token
       }
@@ -29,10 +83,14 @@ class APIClient {
     return headers
   }
 
-  private async request<T>(endpoint: string, options: RequestInit & { includeGoogleToken?: boolean } = {}): Promise<T> {
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit & { includeGoogleToken?: boolean } = {},
+    attempt = 1
+  ): Promise<T> {
     const { includeGoogleToken, ...fetchOptions } = options
-    const headers = await this.getAuthHeaders(includeGoogleToken)
-    
+    const headers = await this.getAuthHeaders(includeGoogleToken, attempt > 1)
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...fetchOptions,
       headers: {
@@ -42,6 +100,12 @@ class APIClient {
     })
 
     if (!response.ok) {
+      if (response.status === 401 && includeGoogleToken && attempt === 1) {
+        // Force refresh Supabase + provider tokens and retry once
+        await this.getAuthHeaders(includeGoogleToken, true)
+        return this.request<T>(endpoint, options, attempt + 1)
+      }
+
       const error = await response.json().catch(() => ({ detail: 'Unknown error' }))
       throw new Error(error.detail || `HTTP ${response.status}`)
     }
