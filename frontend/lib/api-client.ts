@@ -64,22 +64,6 @@ class APIClient {
       'Content-Type': 'application/json',
     }
 
-    if (includeGoogleToken) {
-      if (!session.provider_token) {
-        session = await this.getSession(true)
-      }
-
-      if (!session?.provider_token) {
-        throw new Error('No Google provider token available. Please reconnect Google Drive.')
-      }
-
-      headers['x-google-token'] = session.provider_token
-
-      if (session.provider_refresh_token) {
-        headers['x-google-refresh-token'] = session.provider_refresh_token
-      }
-    }
-
     return headers
   }
 
