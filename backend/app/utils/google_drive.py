@@ -8,8 +8,10 @@ import mimetypes
 from typing import Optional, Dict, Any, List, Tuple, Callable, TypeVar
 from difflib import SequenceMatcher
 from supabase import create_client, Client
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from types import MethodType
+import sentry_sdk
+from sentry_sdk import set_context, add_breadcrumb
 
 logger = logging.getLogger(__name__)
 
@@ -35,14 +37,35 @@ def update_tokens_in_db(email: Optional[str], access_token: str, refresh_token: 
         return
 
     try:
+        add_breadcrumb(
+            category='auth',
+            message=f'Updating tokens for {email}',
+            level='info',
+            data={'has_refresh_token': bool(refresh_token)}
+        )
+        
         supabase = get_supabase_service_client()
-        update_data: Dict[str, Any] = {'google_access_token': access_token}
+        update_data: Dict[str, Any] = {
+            'google_access_token': access_token,
+            'updated_at': datetime.now(timezone.utc).isoformat(),
+            # Google OAuth tokens typically expire in 1 hour
+            'google_token_expires_at': (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
+        }
         if refresh_token:
             update_data['google_refresh_token'] = refresh_token
         supabase.table('profiles').update(update_data).eq('email', email).execute()
         logger.info(f"Persisted refreshed Google token for {email}")
     except Exception as e:
         logger.error(f"Failed to persist refreshed Google token for {email}: {e}")
+        sentry_sdk.capture_exception(e, contexts={
+            "token_update": {
+                "email": email,
+                "has_refresh_token": bool(refresh_token),
+                "function": "update_tokens_in_db",
+                "file": __file__,
+                "error": str(e)
+            }
+        })
 
 
 def wrap_credentials_refresh(
@@ -145,6 +168,12 @@ def refresh_and_update_token(email: str) -> Tuple[Optional[str], Optional[str]]:
         Tuple of (access_token, refresh_token) or (None, None) if refresh fails
     """
     try:
+        add_breadcrumb(
+            category='auth',
+            message=f'Starting token refresh for {email}',
+            level='info'
+        )
+        
         supabase = get_supabase_service_client()
         
         # Get current tokens from database
@@ -154,6 +183,19 @@ def refresh_and_update_token(email: str) -> Tuple[Optional[str], Optional[str]]:
         
         if not response.data:
             logger.error(f"No profile found for {email}")
+            sentry_sdk.capture_message(
+                f"No profile found for {email} during token refresh",
+                level='error',
+                contexts={
+                    "token_refresh": {
+                        "email": email,
+                        "function": "refresh_and_update_token",
+                        "file": __file__,
+                        "line": 173,
+                        "error_type": "profile_not_found"
+                    }
+                }
+            )
             return None, None
             
         profile = response.data[0]
@@ -162,6 +204,20 @@ def refresh_and_update_token(email: str) -> Tuple[Optional[str], Optional[str]]:
         
         if not refresh_token:
             logger.error(f"No refresh token found for {email}")
+            sentry_sdk.capture_message(
+                f"No refresh token found for {email}",
+                level='error',
+                contexts={
+                    "token_refresh": {
+                        "email": email,
+                        "has_access_token": bool(access_token),
+                        "function": "refresh_and_update_token",
+                        "file": __file__,
+                        "line": 181,
+                        "error_type": "missing_refresh_token"
+                    }
+                }
+            )
             return None, None
             
         # Get OAuth client credentials
@@ -187,9 +243,13 @@ def refresh_and_update_token(email: str) -> Tuple[Optional[str], Optional[str]]:
             if credentials.expired and credentials.refresh_token:
                 credentials.refresh(Request())
                 
-                # Update the new access token in database
+                # Update the new access token in database with timestamps
+                from datetime import datetime, timezone, timedelta
                 supabase.table('profiles').update({
-                    'google_access_token': credentials.token
+                    'google_access_token': credentials.token,
+                    'updated_at': datetime.now(timezone.utc).isoformat(),
+                    # Google OAuth tokens typically expire in 1 hour
+                    'google_token_expires_at': (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
                 }).eq('email', email).execute()
                 
                 logger.info(f"Successfully refreshed token for {email}")
@@ -202,6 +262,15 @@ def refresh_and_update_token(email: str) -> Tuple[Optional[str], Optional[str]]:
         
     except Exception as e:
         logger.error(f"Error refreshing token for {email}: {e}")
+        sentry_sdk.capture_exception(e, contexts={
+            "token_refresh": {
+                "email": email,
+                "function": "refresh_and_update_token",
+                "file": __file__,
+                "error": str(e),
+                "error_type": type(e).__name__
+            }
+        })
         return None, None
 
 

@@ -21,3 +21,4 @@ agentmail
 resend
 langgraph>=1.0.0
 langchain-core>=1.0.0
+sentry-sdk[fastapi]>=2.0.0

@@ -64,6 +64,14 @@ class APIClient {
       'Content-Type': 'application/json',
     }
 
+    // Include Google OAuth tokens if requested and available
+    if (includeGoogleToken && session.provider_token) {
+      headers['x-google-token'] = session.provider_token
+      if (session.provider_refresh_token) {
+        headers['x-google-refresh-token'] = session.provider_refresh_token
+      }
+    }
+
     return headers
   }
 

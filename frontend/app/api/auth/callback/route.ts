@@ -24,6 +24,41 @@ export async function GET(request: NextRequest) {
     }
     
     if (data?.user) {
+      // Sync Google OAuth tokens to profiles table if available
+      if (data.session?.provider_token) {
+        try {
+          const updateData: any = {
+            google_access_token: data.session.provider_token,
+            updated_at: new Date().toISOString()
+          }
+          if (data.session.provider_refresh_token) {
+            updateData.google_refresh_token = data.session.provider_refresh_token
+          }
+          
+          // Set token expiration (Google OAuth tokens typically expire in 1 hour)
+          if (data.session.expires_at) {
+            // Use the session expiration time for the token
+            updateData.google_token_expires_at = new Date(data.session.expires_at * 1000).toISOString()
+          }
+          
+          // Update the profiles table with the new tokens
+          await supabase
+            .from('profiles')
+            .upsert({
+              id: data.user.id,
+              email: data.user.email,
+              ...updateData
+            }, {
+              onConflict: 'id'
+            })
+            
+          console.log('Successfully synced Google OAuth tokens to profiles table')
+        } catch (error) {
+          console.error('Failed to sync Google OAuth tokens to profiles:', error)
+          // Don't fail the auth flow, just log the error
+        }
+      }
+      
       // Successfully authenticated
       return NextResponse.redirect(`${origin}${next}`)
     }

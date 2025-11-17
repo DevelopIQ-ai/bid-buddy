@@ -11,6 +11,12 @@ from app.utils.google_drive import (
     refresh_and_update_token,
     get_supabase_service_client,
 )
+from app.utils.sentry_utils import (
+    capture_error_with_context,
+    add_operation_breadcrumb,
+    track_google_oauth_issue,
+    sentry_track_endpoint
+)
 
 router = APIRouter(prefix="/api/drive", tags=["Google Drive"])
 logger = logging.getLogger(__name__)
@@ -156,8 +162,12 @@ async def sync_drive_folders(
 
         # Persist header-provided tokens
         if google_token_header:
+            from datetime import datetime, timezone, timedelta
             update_data = {
-                'google_access_token': google_token
+                'google_access_token': google_token,
+                'updated_at': datetime.now(timezone.utc).isoformat(),
+                # Google OAuth tokens typically expire in 1 hour
+                'google_token_expires_at': (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
             }
             if google_refresh_token_header:
                 update_data['google_refresh_token'] = google_refresh_token
@@ -331,6 +341,7 @@ async def list_folders(
     try:
         # Get the provider token (Google access token) from Supabase session
         google_token_header = request.headers.get("x-google-token")
+        google_refresh_token_header = request.headers.get("x-google-refresh-token")
 
         if not google_token_header:
             # Try to get from database
@@ -338,11 +349,44 @@ async def list_folders(
             if not google_token:
                 logger.warning("No Google token available, returning empty list")
                 return {"folders": [], "message": "Please reconnect Google Drive"}
+            google_refresh_token = None
         else:
             google_token = google_token_header
+            google_refresh_token = google_refresh_token_header
+            
+            # Persist tokens to database for future use
+            try:
+                from datetime import datetime, timezone, timedelta
+                supabase = get_supabase_service_client()
+                update_data = {
+                    'google_access_token': google_token,
+                    'updated_at': datetime.now(timezone.utc).isoformat(),
+                    # Google OAuth tokens typically expire in 1 hour
+                    'google_token_expires_at': (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
+                }
+                if google_refresh_token:
+                    update_data['google_refresh_token'] = google_refresh_token
+                
+                # Check if profile exists
+                response = supabase.table('profiles').select('id').eq('id', user['id']).execute()
+                if response.data:
+                    # Update existing profile
+                    supabase.table('profiles').update(update_data).eq('id', user['id']).execute()
+                else:
+                    # Create new profile with tokens
+                    supabase.table('profiles').insert({
+                        'id': user['id'],
+                        'email': user.get('email'),
+                        'created_at': datetime.now(timezone.utc).isoformat(),
+                        **update_data
+                    }).execute()
+                logger.info(f"Persisted Google tokens for user {user['id']}")
+            except Exception as e:
+                logger.error(f"Failed to persist Google tokens: {e}")
+                # Don't fail the request, just log the error
 
         # Build Drive service
-        service = get_drive_service(google_token)
+        service = get_drive_service(google_token, google_refresh_token)
 
         # Build query
         query = "mimeType='application/vnd.google-apps.folder' and trashed=false"
@@ -362,6 +406,30 @@ async def list_folders(
             ).execute()
         except HttpError as e:
             logger.error(f"Google API error in list_folders: {e}")
+            
+            # Track OAuth issues specifically
+            if e.resp.status == 401:
+                track_google_oauth_issue(
+                    user.get('email', 'unknown'),
+                    'token_expired',
+                    {
+                        'user_id': user['id'],
+                        'parent_folder': parent,
+                        'status_code': e.resp.status,
+                        'has_token_in_header': bool(google_token_header)
+                    }
+                )
+            else:
+                capture_error_with_context(
+                    e,
+                    'list_folders',
+                    user_data=user,
+                    extra_context={
+                        'parent_folder': parent,
+                        'status_code': e.resp.status if hasattr(e, 'resp') else None
+                    }
+                )
+            
             if e.resp.status == 401:
                 return {"folders": [], "error": "Google Drive authentication expired. Please reconnect."}
             else:
@@ -384,6 +452,15 @@ async def list_folders(
 
     except Exception as e:
         logger.error(f"Error listing Drive folders: {e}")
+        capture_error_with_context(
+            e,
+            'list_folders',
+            user_data=user,
+            extra_context={
+                'parent_folder': parent,
+                'has_token': bool(google_token_header or google_token)
+            }
+        )
         # Return empty list instead of error to allow UI to function
         return {"folders": [], "error": str(e)}
 
