@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       // Sync Google OAuth tokens to profiles table if available
       if (data.session?.provider_token) {
         try {
-          const updateData: any = {
+          const updateData: Record<string, string> = {
             google_access_token: data.session.provider_token,
             updated_at: new Date().toISOString()
           }

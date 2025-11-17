@@ -12,6 +12,10 @@ from app.routers import projects, drive, agentmail_webhook, admin, trades, sync
 
 load_dotenv()
 
+# Configure logging first
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Configure Sentry (only if DSN is provided)
 SENTRY_DSN = os.getenv("SENTRY_DSN")
 
@@ -44,9 +48,6 @@ if SENTRY_DSN:
     logger.info(f"Sentry initialized for environment: {os.getenv('ENVIRONMENT', 'development')}")
 else:
     logger.info("Sentry DSN not configured, error tracking disabled")
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Bid Buddy API",
